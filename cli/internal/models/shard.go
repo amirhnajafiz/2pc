@@ -11,16 +11,15 @@ type Shard struct {
 
 // DTOClients returns a list of client shards from a given shard.
 func (s Shard) DTOClients() []*ClientShard {
-	list := make([]*ClientShard, len(s.Clients))
+	list := make([]*ClientShard, 0)
 
-	index := 0
 	for key, value := range s.Clients {
-		list[index].Client = key
-		list[index].InitBalance = value
-		list[index].Cluster = s.Cluster
-		list[index].Shard = s.Name
-
-		index++
+		list = append(list, &ClientShard{
+			Client:      key,
+			InitBalance: value,
+			Cluster:     s.Cluster,
+			Shard:       s.Name,
+		})
 	}
 
 	return list

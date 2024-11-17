@@ -8,7 +8,7 @@ import (
 
 // InsertShards creates a shards collection in the database.
 func (d *Database) InsertShards(list []*models.ClientShard) error {
-	records := make([]interface{}, len(list))
+	records := make([]interface{}, 0)
 	for _, item := range list {
 		records = append(records, item)
 	}
