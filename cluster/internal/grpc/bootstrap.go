@@ -4,11 +4,17 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/F24-CSE535/2pc/cluster/internal/grpc/services"
+	"github.com/F24-CSE535/2pc/cluster/internal/storage"
+	"github.com/F24-CSE535/2pc/cluster/pkg/rpc/database"
+
 	"google.golang.org/grpc"
 )
 
 // Bootstrap is a wrapper that holds every required thing for the gRPC server starting.
-type Bootstrap struct{}
+type Bootstrap struct {
+	Storage storage.Database
+}
 
 // ListenAnsServer creates a new gRPC instance with all required services.
 func (b *Bootstrap) ListenAnsServer(port int) error {
@@ -25,6 +31,9 @@ func (b *Bootstrap) ListenAnsServer(port int) error {
 	)
 
 	// register all gRPC services
+	database.RegisterDatabaseServer(server, &services.DatabaseService{
+		Storage: b.Storage,
+	})
 
 	// starting the server
 	if err := server.Serve(listener); err != nil {
