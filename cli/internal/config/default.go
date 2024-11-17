@@ -1,5 +1,8 @@
 package config
 
 func Default() Config {
-	return Config{}
+	return Config{
+		DatastorePath: "",
+		ShardsPath:    "",
+	}
 }

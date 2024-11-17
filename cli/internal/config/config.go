@@ -18,6 +18,8 @@ const Prefix = "2pc_cli_"
 
 // Config struct is a module that stores system configs.
 type Config struct {
+	DatastorePath string `koanf:"datastore_path"`
+	ShardsPath    string `koanf:"shards_path"`
 }
 
 // New reads configuration with koanf, by loading a yaml config path into the Config struct.
