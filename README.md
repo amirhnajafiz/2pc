@@ -30,6 +30,8 @@ Output needs to be sharded like this:
 }
 ```
 
+Store these JSON objects inside `shards` collection in a MongoDB cluster.
+
 ## Client
 
 ### PrintBalance
