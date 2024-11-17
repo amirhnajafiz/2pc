@@ -2,6 +2,7 @@
 vendor/
 main
 main~
+logs.csv
 
 # app directoires
 tests/

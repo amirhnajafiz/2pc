@@ -46,8 +46,8 @@ func (c *ShardHandler) Execute(argc int, args []string) error {
 	// loop over shards to build our list
 	for _, shard := range shards {
 		tmp := models.Shard{
-			Name:    shard[0],
-			Cluster: shard[1],
+			Name:    strings.TrimSpace(shard[0]),
+			Cluster: strings.TrimSpace(shard[1]),
 			Clients: make(map[string]int),
 		}
 
