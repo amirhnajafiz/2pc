@@ -46,10 +46,10 @@ func (c *ShardHandler) Execute(argc int, args []string) error {
 
 		// split range by '-'
 		parts := strings.Split(shard[2], "-")
-		if tmp.StartId, err = strconv.Atoi(parts[0]); err != nil {
+		if tmp.StartId, err = strconv.Atoi(strings.TrimSpace(parts[0])); err != nil {
 			return fmt.Errorf("failed to parse range %s: %v", shard[0], err)
 		}
-		if tmp.EndId, err = strconv.Atoi(parts[1]); err != nil {
+		if tmp.EndId, err = strconv.Atoi(strings.TrimSpace(parts[1])); err != nil {
 			return fmt.Errorf("failed to parse range %s: %v", shard[0], err)
 		}
 
@@ -62,13 +62,23 @@ func (c *ShardHandler) Execute(argc int, args []string) error {
 
 		for _, item := range list {
 			// client index should be in the range of shard
-			if item.StartId >= index && index < item.EndId {
+			if item.StartId <= index && index < item.EndId {
 				item.Clients[key] = value
 			}
 		}
 	}
 
-	fmt.Println(list)
+	// print some metadata
+	for _, shard := range list {
+		fmt.Printf(
+			"shard %s mapped to cluster %s with %d clients (%d-%d).\n",
+			shard.Name,
+			shard.Cluster,
+			len(shard.Clients),
+			shard.StartId,
+			shard.EndId-1,
+		)
+	}
 
 	return nil
 }

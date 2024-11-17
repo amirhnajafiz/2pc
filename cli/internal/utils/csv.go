@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 )
 
 // CSVParseDatastoreFile to get client names and their balances.
@@ -31,7 +32,7 @@ func CSVParseDatastoreFile(path string) (map[string]int, error) {
 
 	// loop over rows
 	for _, row := range data[1:] {
-		tmp, err := strconv.Atoi(row[1])
+		tmp, err := strconv.Atoi(strings.TrimSpace(row[1]))
 		if err != nil {
 			return nil, err
 		}
