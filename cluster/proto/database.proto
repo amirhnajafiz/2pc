@@ -1,10 +1,10 @@
 syntax = "proto3";
-package paxos;
+package database;
 
-option go_package = "./rpc/paxos";
+option go_package = "./rpc/database";
 
-// creating rpc services for transactions and paxos.
-service Paxos {
+// creating rpc services for database management system.
+service Database {
   rpc PrintBalance(PrintBalanceMsg) returns (PrintBalanceRsp) {}
 }
 
