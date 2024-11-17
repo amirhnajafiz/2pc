@@ -20,6 +20,8 @@ const Prefix = "apax_"
 type Config struct {
 	NodeName string `koanf:"node_name"`
 	GRPCPort int    `koanf:"grpc_port"`
+
+	LogLevel string `koanf:"log_level"`
 	MongoDB  string `koanf:"mongodb"`
 	Database string `koanf:"database"`
 }

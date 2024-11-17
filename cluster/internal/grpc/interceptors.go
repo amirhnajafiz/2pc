@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
 
@@ -13,6 +14,8 @@ func (b *Bootstrap) allStreamInterceptor(
 	info *grpc.StreamServerInfo,
 	handler grpc.StreamHandler,
 ) error {
+	b.Logger.Info("stream rpc called", zap.String("method", info.FullMethod))
+
 	return handler(srv, ss)
 }
 
@@ -23,5 +26,7 @@ func (b *Bootstrap) allUnaryInterceptor(
 	info *grpc.UnaryServerInfo,
 	handler grpc.UnaryHandler,
 ) (interface{}, error) {
+	b.Logger.Info("stream rpc called", zap.String("method", info.FullMethod))
+
 	return handler(ctx, req)
 }

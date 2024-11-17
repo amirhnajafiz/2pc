@@ -5,13 +5,16 @@ import (
 
 	"github.com/F24-CSE535/2pc/cluster/internal/storage"
 	"github.com/F24-CSE535/2pc/cluster/pkg/rpc/database"
+
+	"go.uber.org/zap"
 )
 
 // DatabaseService is used for handling database RPCs.
 type DatabaseService struct {
 	database.UnimplementedDatabaseServer
 
-	Storage storage.Database
+	Logger  *zap.Logger
+	Storage *storage.Database
 }
 
 // PrintBalance accepts a printbalance message and returns a printbalance response.

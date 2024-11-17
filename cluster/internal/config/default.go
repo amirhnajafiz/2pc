@@ -6,5 +6,6 @@ func Default() Config {
 		GRPCPort: 0,
 		MongoDB:  "",
 		Database: "",
+		LogLevel: "debug",
 	}
 }
