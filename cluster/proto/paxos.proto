@@ -1,0 +1,19 @@
+syntax = "proto3";
+package paxos;
+
+option go_package = "./rpc/paxos";
+
+// creating rpc services for transactions and paxos.
+service Paxos {
+  rpc PrintBalance(PrintBalanceMsg) returns (PrintBalanceRsp) {}
+}
+
+// defining rpc messages
+message PrintBalanceMsg {
+  string client = 1;
+}
+
+message PrintBalanceRsp {
+  string client = 1;
+  int64 balance = 2;
+}
