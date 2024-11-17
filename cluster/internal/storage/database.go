@@ -19,7 +19,7 @@ type Database struct {
 }
 
 // NewClusterDatabase opens a MongoDB connection and returns an instance of database struct.
-func NewClusterDatabase(uri string, database string) (*Database, error) {
+func NewClusterDatabase(uri string, database string, cluster string) (*Database, error) {
 	// open a new connection to MongoDB cluster
 	conn, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
 	if err != nil {
@@ -29,7 +29,7 @@ func NewClusterDatabase(uri string, database string) (*Database, error) {
 	// create a new instance
 	instance := Database{
 		conn:    conn,
-		cluster: database,
+		cluster: cluster,
 	}
 
 	// create pointers to collections

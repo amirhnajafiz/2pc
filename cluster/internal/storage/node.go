@@ -26,7 +26,7 @@ func (d *Database) InsertClusterShard(shard []*models.ClientShard) error {
 
 // GetClientBalance returns a balance value by accepting a client.
 func (d *Database) GetClientBalance(client string) (int, error) {
-	// create a filter for the specified client
+	// create a filter for the specified cluster
 	filter := bson.M{"client": client}
 	findOptions := options.FindOne().SetProjection(bson.M{"balance": 1, "_id": 0})
 
