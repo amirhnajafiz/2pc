@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/F24-CSE535/2pc/cli/internal/database"
 	"github.com/F24-CSE535/2pc/cli/internal/models"
 	"github.com/F24-CSE535/2pc/cli/internal/utils"
 )
@@ -18,9 +19,15 @@ func (c *ShardHandler) GetName() string {
 }
 
 func (c *ShardHandler) Execute(argc int, args []string) error {
-	// two arguments are needed
-	if argc != 2 {
+	// four arguments are needed
+	if argc != 4 {
 		return fmt.Errorf("mismatch input arguments: count%d expected 2", argc)
+	}
+
+	// open database connection
+	db, err := database.NewDatabase(args[2], args[3])
+	if err != nil {
+		return err
 	}
 
 	// parse input csv files (args[0] is datastore path and args[1] is shards path)
@@ -70,6 +77,10 @@ func (c *ShardHandler) Execute(argc int, args []string) error {
 
 	// print some metadata
 	for _, shard := range list {
+		if err := db.InsertShards(shard.DTOClients()); err != nil {
+			return fmt.Errorf("failed to inserts %s to database: %v", shard.Name, err)
+		}
+
 		fmt.Printf(
 			"shard %s mapped to cluster %s with %d clients (%d-%d).\n",
 			shard.Name,
