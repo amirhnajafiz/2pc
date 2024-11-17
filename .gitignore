@@ -1,0 +1,20 @@
+# export files
+vendor/
+main
+main~
+node
+gctl
+client
+
+# app directoires
+tests/
+configs/
+
+# config files
+config.yaml
+config.yml
+
+# workspace
+.vscode/
+.DS_Store
+.idea/
