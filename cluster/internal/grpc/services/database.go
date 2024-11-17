@@ -19,5 +19,13 @@ type DatabaseService struct {
 
 // PrintBalance accepts a printbalance message and returns a printbalance response.
 func (d *DatabaseService) PrintBalance(_ context.Context, msg *database.PrintBalanceMsg) (*database.PrintBalanceRsp, error) {
-	return nil, nil
+	balance, err := d.Storage.GetClientBalance(msg.GetClient())
+	if err != nil {
+		return nil, err
+	}
+
+	return &database.PrintBalanceRsp{
+		Client:  msg.GetClient(),
+		Balance: int64(balance),
+	}, nil
 }
