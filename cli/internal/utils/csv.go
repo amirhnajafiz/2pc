@@ -61,5 +61,5 @@ func CSVParseShardsFile(path string) ([][]string, error) {
 		return nil, fmt.Errorf("failed to read CSV file %s: %v", path, err)
 	}
 
-	return data, nil
+	return data[1:], nil
 }
