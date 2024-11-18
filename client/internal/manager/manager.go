@@ -4,6 +4,7 @@ import (
 	grpc "github.com/F24-CSE535/2pc/client/internal/grpc/dialer"
 	"github.com/F24-CSE535/2pc/client/internal/storage"
 	"github.com/F24-CSE535/2pc/client/pkg/models"
+	"github.com/F24-CSE535/2pc/client/pkg/rpc/database"
 )
 
 // Manager is a struct that handles client input commands.
@@ -51,9 +52,9 @@ func (m *Manager) processor() {
 		// switch case for packet label
 		switch pkt.Label {
 		case "reply":
-			break
+			m.handleReply(pkt.Payload.(*database.ReplyMsg))
 		case "ack":
-			break
+			m.handleAck(pkt.Payload.(*database.AckMsg))
 		}
 	}
 }
