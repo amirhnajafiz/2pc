@@ -4,9 +4,11 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	grpc "github.com/F24-CSE535/2pc/client/internal/grpc/dialer"
+	"github.com/F24-CSE535/2pc/client/internal/grpc/server"
 	"github.com/F24-CSE535/2pc/client/internal/manager"
 	"github.com/F24-CSE535/2pc/client/internal/storage"
 	"github.com/F24-CSE535/2pc/client/internal/utils"
@@ -14,8 +16,8 @@ import (
 
 func main() {
 	args := os.Args
-	if len(args) < 4 {
-		panic("at least fours arguments are needed (./main <path-to-iptable> <mongodb-uri> <database>)")
+	if len(args) < 5 {
+		panic("at least fours arguments are needed (./main <path-to-iptable> <mongodb-uri> <database> <port>)")
 	}
 
 	// load iptable
@@ -32,6 +34,10 @@ func main() {
 
 	// create a new commands instance
 	mg := manager.NewManager(&grpc.Dialer{Nodes: nodes}, db)
+
+	// create a new gRPC server
+	port, _ := strconv.Atoi(args[4])
+	go server.StartNewServer(port, mg.GetChannel())
 
 	// in a for loop, read user commands
 	reader := bufio.NewReader(os.Stdin)

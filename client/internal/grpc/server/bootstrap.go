@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"log"
 	"net"
 
 	"github.com/F24-CSE535/2pc/client/pkg/models"
@@ -27,6 +28,7 @@ func StartNewServer(port int, channel chan *models.Packet) error {
 	})
 
 	// start gRPC server
+	log.Printf("grpc server started on %d ...\n", port)
 	if err := server.Serve(listener); err != nil {
 		return fmt.Errorf("failed to start the server: %v", err)
 	}
