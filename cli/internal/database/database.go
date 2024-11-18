@@ -12,6 +12,7 @@ import (
 type Database struct {
 	conn             *mongo.Client
 	shardsCollection *mongo.Collection
+	eventsCollection *mongo.Collection
 }
 
 // NewDatabase opens a MySQL connection and returns an instance of
@@ -30,6 +31,7 @@ func NewDatabase(uri string, database string) (*Database, error) {
 
 	// create pointers to collections
 	instance.shardsCollection = conn.Database(database).Collection("shards")
+	instance.eventsCollection = conn.Database(database).Collection("events")
 
 	return &instance, nil
 }

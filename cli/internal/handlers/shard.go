@@ -21,7 +21,7 @@ func (c *ShardHandler) GetName() string {
 func (c *ShardHandler) Execute(argc int, args []string) error {
 	// four arguments are needed
 	if argc != 4 {
-		return fmt.Errorf("mismatch input arguments: count%d expected 2", argc)
+		return fmt.Errorf("mismatch input arguments: count%d expected 4", argc)
 	}
 
 	// open database connection
