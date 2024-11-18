@@ -6,7 +6,6 @@ import (
 	"github.com/F24-CSE535/2pc/cluster/pkg/models"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // InsertClusterShard gets shard of a cluster and stores them inside clients collection.
@@ -39,19 +38,13 @@ func (d *Database) IsCollectionEmpty() (bool, error) {
 func (d *Database) GetClientBalance(client string) (int, error) {
 	// create a filter for the specified cluster
 	filter := bson.M{"client": client}
-	findOptions := options.FindOne().SetProjection(bson.M{"balance": 1, "_id": 0})
-
-	// find first document that match the filter
-	cursor := d.clientsCollection.FindOne(context.TODO(), filter, findOptions)
-	if err := cursor.Err(); err != nil {
-		return 0, err
-	}
 
 	// decode the response
-	var balance int
-	if err := cursor.Decode(&balance); err != nil {
+	var clientInstance models.Client
+	err := d.clientsCollection.FindOne(context.TODO(), filter).Decode(&clientInstance)
+	if err != nil {
 		return 0, err
 	}
 
-	return balance, nil
+	return int(clientInstance.Balance), nil
 }

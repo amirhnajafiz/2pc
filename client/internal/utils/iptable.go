@@ -7,7 +7,7 @@ import (
 )
 
 // IPTableParseFile returns a map of nodes and their IPs.
-func IPTableParseFile(path string) (map[string]string, error) {
+func IPTableParseFile(path string) (map[string][]string, error) {
 	// open the iptable file
 	file, err := os.Open(path)
 	if err != nil {
@@ -16,7 +16,7 @@ func IPTableParseFile(path string) (map[string]string, error) {
 	defer file.Close()
 
 	// create a new map
-	hashMap := make(map[string]string)
+	hashMap := make(map[string][]string)
 
 	// create a file scanner
 	fileScanner := bufio.NewScanner(file)
@@ -25,7 +25,12 @@ func IPTableParseFile(path string) (map[string]string, error) {
 	// read file line-by-line
 	for fileScanner.Scan() {
 		parts := strings.Split(fileScanner.Text(), "-")
-		hashMap[parts[0]] = parts[1]
+
+		if _, ok := hashMap[parts[0]]; !ok {
+			hashMap[parts[0]] = make([]string, 0)
+		}
+
+		hashMap[parts[0]] = append(hashMap[parts[0]], parts[1])
 	}
 
 	return hashMap, nil

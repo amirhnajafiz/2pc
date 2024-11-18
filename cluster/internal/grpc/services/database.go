@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/F24-CSE535/2pc/cluster/internal/storage"
 	"github.com/F24-CSE535/2pc/cluster/pkg/rpc/database"
@@ -21,7 +22,7 @@ type DatabaseService struct {
 func (d *DatabaseService) PrintBalance(_ context.Context, msg *database.PrintBalanceMsg) (*database.PrintBalanceRsp, error) {
 	balance, err := d.Storage.GetClientBalance(msg.GetClient())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("database failed: %v", err)
 	}
 
 	return &database.PrintBalanceRsp{

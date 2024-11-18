@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"fmt"
+	"math/rand"
 
 	"github.com/F24-CSE535/2pc/client/internal/rpc/database"
 
@@ -12,11 +13,14 @@ import (
 
 // Dialer is a module for making RPC calls from client to clusters.
 type Dialer struct {
-	Nodes map[string]string
+	Nodes map[string][]string
 }
 
 // connect should be called in the beginning of each method to establish a connection.
-func (d *Dialer) connect(address string) (*grpc.ClientConn, error) {
+func (d *Dialer) connect(target string) (*grpc.ClientConn, error) {
+	randomIndex := rand.Intn(len(d.Nodes[target]))
+	address := d.Nodes[target][randomIndex]
+
 	conn, err := grpc.NewClient(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to open connection to %s: %v", address, err)
@@ -27,10 +31,8 @@ func (d *Dialer) connect(address string) (*grpc.ClientConn, error) {
 
 // PrintBalance accepts a target and client to return the client balance.
 func (d *Dialer) PrintBalance(target string, client string) (int, error) {
-	address := d.Nodes[target]
-
 	// base connection
-	conn, err := d.connect(address)
+	conn, err := d.connect(target)
 	if err != nil {
 		return 0, err
 	}
