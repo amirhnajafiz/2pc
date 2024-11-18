@@ -1,30 +1,32 @@
 package csm
 
 import (
-	"github.com/F24-CSE535/2pc/cluster/internal/storage"
+	"github.com/F24-CSE535/2pc/cluster/internal/csm/handlers"
 	"github.com/F24-CSE535/2pc/cluster/pkg/packets"
 )
 
-// ConsensusStateMachine is a processing unit that captures packets and calls handlers.
+// ConsensusStateMachine is a processing unit that captures packets from gRPC level and passes them to handlers.
 type ConsensusStateMachine struct {
-	storage *storage.Database
-	channel chan *packets.Packet
+	databaseHandler *handlers.DatabaseHandler
+	channel         chan *packets.Packet
 }
 
+// Start method waits on packets on the input channel, and performs a logic based on packet label.
 func (c *ConsensusStateMachine) Start() {
 	for {
 		// get the gRPC messages
 		pkt := <-c.channel
 
+		// case on packet label
 		switch pkt.Label {
 		case packets.PktRequest:
-			break
+			c.databaseHandler.Request()
 		case packets.PktPrepare:
-			break
+			c.databaseHandler.Prepare()
 		case packets.PktCommit:
-			break
+			c.databaseHandler.Commit()
 		case packets.PktAbort:
-			break
+			c.databaseHandler.Abort()
 		}
 	}
 }
