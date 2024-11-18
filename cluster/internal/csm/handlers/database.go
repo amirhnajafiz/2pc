@@ -24,6 +24,11 @@ func (d DatabaseHandler) Request(trx *database.TransactionMsg) {
 
 	// check the balance and transaction amount
 	if trx.GetAmount() <= int64(balance) {
+		if err := d.storage.UpdateClientBalance(trx.GetSender(), balance-int(trx.GetAmount())); err != nil {
+			d.logger.Warn("failed to update sender balance", zap.Error(err))
+			return
+		}
+
 		d.logger.Info(
 			"transaction submitted",
 			zap.Int64("session id", trx.GetSessionId()),
