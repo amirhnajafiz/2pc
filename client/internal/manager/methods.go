@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/F24-CSE535/2pc/client/pkg/models"
+	"github.com/F24-CSE535/2pc/client/pkg/rpc/database"
 )
 
 func (m *Manager) Performance() string {
@@ -62,6 +63,16 @@ func (m *Manager) Transaction(argc int, argv []string) string {
 
 		if err := m.dialer.Request(senderCluster, sender, receiver, amount, sessionId); err != nil {
 			return fmt.Errorf("server failed: %v", err).Error()
+		}
+	} else {
+		session.Type = "cross-shard"
+		session.Acks = make([]*database.AckMsg, 0)
+
+		if err := m.dialer.Request(senderCluster, sender, receiver, amount, sessionId); err != nil {
+			return fmt.Errorf("sender server failed: %v", err).Error()
+		}
+		if err := m.dialer.Request(receiverCluster, sender, receiver, amount, sessionId); err != nil {
+			return fmt.Errorf("receiver server failed: %v", err).Error()
 		}
 	}
 
