@@ -14,7 +14,7 @@ import (
 )
 
 // Prefix indicates environment variables prefix.
-const Prefix = "apax_"
+const Prefix = "2pc_"
 
 // Config struct is a module that stores system configs.
 type Config struct {

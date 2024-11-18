@@ -14,11 +14,11 @@ type node struct {
 	terminationChannel chan bool
 }
 
-func (n node) main(port int, name string) {
+func (n node) main(port int) {
 	go func() {
 		// create a bootstrap
 		b := grpc.Bootstrap{
-			Logger:  n.logger.Named("grpc-" + name),
+			Logger:  n.logger,
 			Storage: n.database,
 		}
 
