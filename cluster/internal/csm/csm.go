@@ -3,6 +3,7 @@ package csm
 import (
 	"github.com/F24-CSE535/2pc/cluster/internal/csm/handlers"
 	"github.com/F24-CSE535/2pc/cluster/pkg/packets"
+	"github.com/F24-CSE535/2pc/cluster/pkg/rpc/database"
 )
 
 // ConsensusStateMachine is a processing unit that captures packets from gRPC level and passes them to handlers.
@@ -20,7 +21,7 @@ func (c *ConsensusStateMachine) Start() {
 		// case on packet label
 		switch pkt.Label {
 		case packets.PktRequest:
-			c.databaseHandler.Request()
+			c.databaseHandler.Request(pkt.Payload.(*database.RequestMsg).GetTransaction())
 		case packets.PktPrepare:
 			c.databaseHandler.Prepare()
 		case packets.PktCommit:

@@ -4,6 +4,8 @@ import (
 	"github.com/F24-CSE535/2pc/cluster/internal/csm/handlers"
 	"github.com/F24-CSE535/2pc/cluster/internal/storage"
 	"github.com/F24-CSE535/2pc/cluster/pkg/packets"
+
+	"go.uber.org/zap"
 )
 
 // Manager is responsible for fully creating consensus state machines.
@@ -13,14 +15,14 @@ type Manager struct {
 }
 
 // Initialize accepts a number as the number of processing units, then it starts CSMs.
-func (m *Manager) Initialize(replicas int) {
+func (m *Manager) Initialize(logr *zap.Logger, replicas int) {
 	// the manager input channel
 	m.Channel = make(chan *packets.Packet)
 
 	for i := 0; i < replicas; i++ {
 		// create a new CSM
 		csm := ConsensusStateMachine{
-			databaseHandler: handlers.NewDatabaseHandler(m.Storage),
+			databaseHandler: handlers.NewDatabaseHandler(m.Storage, logr.Named("csm-handler")),
 			channel:         m.Channel,
 		}
 
