@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/F24-CSE535/2pc/client/internal/rpc/database"
+	"github.com/F24-CSE535/2pc/client/pkg/rpc/database"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
