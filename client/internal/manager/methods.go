@@ -25,3 +25,23 @@ func (m *Manager) PrintBalance(argc int, argv []string) string {
 		return fmt.Sprintf("%s : %d", argv[0], balance)
 	}
 }
+
+func (m *Manager) RoundTrip(argc int, argv []string) string {
+	// check the number of arguments
+	if argc < 1 {
+		return "not enough arguments"
+	}
+
+	// get the shard
+	cluster, err := m.storage.GetClientShard(argv[0])
+	if err != nil {
+		return fmt.Errorf("database failed: %v", err).Error()
+	}
+
+	// make RPC call
+	if err := m.dialer.Request(cluster, argv[0], "", 0, 0); err != nil {
+		return fmt.Errorf("server failed: %v", err).Error()
+	}
+
+	return "roundtrip sent"
+}
