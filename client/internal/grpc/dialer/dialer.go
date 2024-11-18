@@ -13,7 +13,8 @@ import (
 
 // Dialer is a module for making RPC calls from client to clusters.
 type Dialer struct {
-	Nodes map[string][]string
+	Address string
+	Nodes   map[string][]string
 }
 
 // connect should be called in the beginning of each method to establish a connection.
@@ -27,6 +28,95 @@ func (d *Dialer) connect(target string) (*grpc.ClientConn, error) {
 	}
 
 	return conn, nil
+}
+
+// Request accepts a transaction parameters for an inter-shard transaction.
+func (d *Dialer) Request(target, sender, receiver string, amount, sessionId int) error {
+	// base connection
+	conn, err := d.connect(target)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	// call Request RPC
+	if _, err = database.NewDatabaseClient(conn).Request(context.Background(), &database.RequestMsg{
+		Transaction: &database.TransactionMsg{ // initialize a new transaction
+			Sender:    sender,
+			Receiver:  receiver,
+			Amount:    int64(amount),
+			SessionId: int64(sessionId),
+		},
+		ReturnAddress: d.Address, // set the return address
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Request accepts a transaction parameters for a cross-shard transaction.
+func (d *Dialer) Prepare(target, sender, receiver string, amount, sessionId int) error {
+	// base connection
+	conn, err := d.connect(target)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	// call Prepare RPC
+	if _, err = database.NewDatabaseClient(conn).Prepare(context.Background(), &database.PrepareMsg{
+		Transaction: &database.TransactionMsg{ // initialize a new transaction
+			Sender:    sender,
+			Receiver:  receiver,
+			Amount:    int64(amount),
+			SessionId: int64(sessionId),
+		},
+		ReturnAddress: d.Address, // set the return address
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Commit accepts a target and sessionId to send a commit message.
+func (d *Dialer) Commit(target string, sessionId int) error {
+	// base connection
+	conn, err := d.connect(target)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	// call Commit RPC
+	if _, err = database.NewDatabaseClient(conn).Commit(context.Background(), &database.CommitMsg{
+		SessionId:     int64(sessionId), // set the session id
+		ReturnAddress: d.Address,        // set the return address
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Abort accepts a target and sessionId to send an abort message.
+func (d *Dialer) Abort(target string, sessionId int) error {
+	// base connection
+	conn, err := d.connect(target)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	// call Abort RPC
+	if _, err = database.NewDatabaseClient(conn).Abort(context.Background(), &database.AbortMsg{
+		SessionId: int64(sessionId), // set the session id
+	}); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // PrintBalance accepts a target and client to return the client balance.
