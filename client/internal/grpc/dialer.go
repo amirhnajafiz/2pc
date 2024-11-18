@@ -12,7 +12,7 @@ import (
 
 // Dialer is a module for making RPC calls from client to clusters.
 type Dialer struct {
-	nodes map[string]string
+	Nodes map[string]string
 }
 
 // connect should be called in the beginning of each method to establish a connection.
@@ -27,7 +27,7 @@ func (d *Dialer) connect(address string) (*grpc.ClientConn, error) {
 
 // PrintBalance accepts a target and client to return the client balance.
 func (d *Dialer) PrintBalance(target string, client string) (int, error) {
-	address := d.nodes[target]
+	address := d.Nodes[target]
 
 	// base connection
 	conn, err := d.connect(address)
