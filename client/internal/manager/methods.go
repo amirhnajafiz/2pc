@@ -31,7 +31,7 @@ func (m *Manager) PrintBalance(argc int, argv []string) string {
 
 func (m *Manager) Transaction(argc int, argv []string) string {
 	// check the number of arguments
-	if argc < 4 {
+	if argc < 3 {
 		return "not enough arguments"
 	}
 

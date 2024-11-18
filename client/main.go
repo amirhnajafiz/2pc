@@ -55,6 +55,8 @@ func main() {
 
 		// switch on the first input as the command
 		switch parts[0] {
+		case "transaction":
+			fmt.Println(mg.Transaction(cargsc, cargs))
 		case "rt":
 			fmt.Println(mg.RoundTrip(cargsc, cargs))
 		case "printbalance":
