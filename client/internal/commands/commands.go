@@ -3,7 +3,7 @@ package commands
 import (
 	"fmt"
 
-	"github.com/F24-CSE535/2pc/client/internal/grpc"
+	grpc "github.com/F24-CSE535/2pc/client/internal/grpc/dialer"
 	"github.com/F24-CSE535/2pc/client/internal/storage"
 )
 

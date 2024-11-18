@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/F24-CSE535/2pc/cli/internal/models"
+	"github.com/F24-CSE535/2pc/cli/pkg/models"
 )
 
 // InsertShards creates a shards collection in the database.

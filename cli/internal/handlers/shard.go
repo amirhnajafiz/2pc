@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/F24-CSE535/2pc/cli/internal/database"
-	"github.com/F24-CSE535/2pc/cli/internal/models"
 	"github.com/F24-CSE535/2pc/cli/internal/utils"
+	"github.com/F24-CSE535/2pc/cli/pkg/models"
 )
 
 // ShardHandler reads the input datastore and shards files and
@@ -27,7 +27,7 @@ func (c *ShardHandler) Execute(argc int, args []string) error {
 	// open database connection
 	db, err := database.NewDatabase(args[2], args[3])
 	if err != nil {
-		return err
+		return fmt.Errorf("open database failed: %v", err)
 	}
 
 	// parse input csv files (args[0] is datastore path and args[1] is shards path)
