@@ -9,7 +9,7 @@ import (
 func main() {
 	args := os.Args
 	if len(args) < 3 {
-		panic("at least one argument is needed")
+		panic("at least two arguments are needed (./main <cluster-name> <config-path>)")
 	}
 
 	// create a new cluster manager

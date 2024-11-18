@@ -18,12 +18,11 @@ const Prefix = "apax_"
 
 // Config struct is a module that stores system configs.
 type Config struct {
-	NodeName string `koanf:"node_name"`
-	GRPCPort int    `koanf:"grpc_port"`
-
-	LogLevel string `koanf:"log_level"`
-	MongoDB  string `koanf:"mongodb"`
-	Database string `koanf:"database"`
+	WatchInterval int    `koanf:"watch_interval"`
+	Subnet        int    `koanf:"subnet"`
+	LogLevel      string `koanf:"log_level"`
+	MongoDB       string `koanf:"mongodb"`
+	Database      string `koanf:"database"`
 }
 
 // New reads configuration with koanf, by loading a yaml config path into the Config struct.
