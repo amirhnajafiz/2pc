@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/F24-CSE535/2pc/cluster/internal/config"
@@ -28,8 +29,7 @@ func (c *Cluster) Main() error {
 	c.cfg = config.New(c.ConfigPath)
 	c.ports = c.cfg.Subnet
 
-	// create new console zap logger and a new file logger
-	logr := logger.NewCoreLogger(c.cfg.LogLevel)
+	// create a new file logger
 	floger := logger.NewFileLogger(c.cfg.LogLevel)
 
 	// open global database connection
@@ -52,7 +52,7 @@ func (c *Cluster) Main() error {
 		// get events
 		events, err := c.database.GetEvents()
 		if err != nil {
-			logr.Warn("failed to get events", zap.Error(err))
+			log.Printf("failed to get events: %v\n", err)
 			continue
 		}
 
@@ -60,14 +60,15 @@ func (c *Cluster) Main() error {
 		for _, event := range events {
 			switch event.Operation {
 			case "scale-up":
-				c.scaleUp(floger)
-				logr.Info("scaled up", zap.Int("nodes", len(c.nodes)))
+				if err := c.scaleUp(floger); err != nil {
+					log.Printf("failed to scale-up: %v", err)
+				}
 			}
 		}
 
 		// update events
 		if err := c.database.UpdateEvents(); err != nil {
-			logr.Warn("failed update events", zap.Error(err))
+			log.Printf("failed to update events: %v\n", err)
 		}
 	}
 }
@@ -111,6 +112,8 @@ func (c *Cluster) scaleUp(loger *zap.Logger) error {
 
 	// start the node
 	go n.main(port, name)
+
+	log.Printf("scaled up, nodes %d\n", len(c.nodes))
 
 	return nil
 }
