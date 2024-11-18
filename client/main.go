@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	grpc "github.com/F24-CSE535/2pc/client/internal/grpc/dialer"
-	"github.com/F24-CSE535/2pc/client/internal/manager/commands"
+	"github.com/F24-CSE535/2pc/client/internal/manager"
 	"github.com/F24-CSE535/2pc/client/internal/storage"
 	"github.com/F24-CSE535/2pc/client/internal/utils"
 )
@@ -31,7 +31,7 @@ func main() {
 	}
 
 	// create a new commands instance
-	cmd := commands.NewCommands(&grpc.Dialer{Nodes: nodes}, db)
+	mg := manager.NewManager(&grpc.Dialer{Nodes: nodes}, db)
 
 	// in a for loop, read user commands
 	reader := bufio.NewReader(os.Stdin)
@@ -56,9 +56,9 @@ func main() {
 		// switch on the first input as the command
 		switch parts[0] {
 		case "printbalance":
-			fmt.Println(cmd.PrintBalance(cargsc, cargs))
+			fmt.Println(mg.PrintBalance(cargsc, cargs))
 		case "performance":
-			fmt.Println(cmd.Performance())
+			fmt.Println(mg.Performance())
 		case "exit":
 			return
 		default:
