@@ -63,6 +63,8 @@ func (c *Cluster) Main() error {
 				if err := c.scaleUp(floger); err != nil {
 					log.Printf("failed to scale-up: %v", err)
 				}
+			case "scale-down":
+				c.scaleDown()
 			}
 		}
 
@@ -116,4 +118,14 @@ func (c *Cluster) scaleUp(loger *zap.Logger) error {
 	log.Printf("scaled up, nodes %d\n", len(c.nodes))
 
 	return nil
+}
+
+// scaleDown removes the last node from the nodes list.
+func (c *Cluster) scaleDown() {
+	last := len(c.nodes) - 1
+
+	c.nodes[last] <- true
+	c.nodes = c.nodes[:last]
+
+	log.Printf("scaled down, nodes %d\n", len(c.nodes))
 }
