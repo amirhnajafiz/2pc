@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// Cluster is a manager that monitors events and performs operations on a cluster nodes.
 type Cluster struct {
 	ConfigPath  string
 	ClusterName string
@@ -60,6 +61,7 @@ func (c *Cluster) Main() error {
 			switch event.Operation {
 			case "scale-up":
 				c.scaleUp(floger)
+				logr.Info("scaled up", zap.Int("nodes", len(c.nodes)))
 			}
 		}
 
@@ -77,19 +79,19 @@ func (c *Cluster) scaleUp(loger *zap.Logger) error {
 	// open the new node database
 	ndb, err := storage.NewNodeDatabase(c.cfg.MongoDB, c.ClusterName, name)
 	if err != nil {
-		return fmt.Errorf("failed to open node database connection: %v", err)
+		return fmt.Errorf("failed to open %s database connection: %v", name, err)
 	}
 
 	if isEmpty, err := ndb.IsCollectionEmpty(); err != nil {
-		return fmt.Errorf("failed to check collection status: %v", err)
+		return fmt.Errorf("failed to check %s clients collection status: %v", name, err)
 	} else if isEmpty {
 		// clone the shards into the node database
 		sh, err := c.database.GetClusterShard()
 		if err != nil {
-			return fmt.Errorf("failed to get cluster shard: %v", err)
+			return fmt.Errorf("failed to get global cluster shard: %v", err)
 		}
 		if err := ndb.InsertClusterShard(sh); err != nil {
-			return fmt.Errorf("failed to create new node collections: %v", err)
+			return fmt.Errorf("failed to create %s clients collections: %v", name, err)
 		}
 	}
 
