@@ -20,6 +20,7 @@ const Prefix = "apax_"
 type Config struct {
 	WatchInterval int    `koanf:"watch_interval"`
 	Subnet        int    `koanf:"subnet"`
+	Replicas      int    `koanf:"replicas"`
 	LogLevel      string `koanf:"log_level"`
 	MongoDB       string `koanf:"mongodb"`
 	Database      string `koanf:"database"`
