@@ -6,20 +6,24 @@ import (
 
 	"github.com/F24-CSE535/2pc/cluster/internal/grpc/services"
 	"github.com/F24-CSE535/2pc/cluster/internal/storage"
+	"github.com/F24-CSE535/2pc/cluster/pkg/packets"
 	"github.com/F24-CSE535/2pc/cluster/pkg/rpc/database"
-	"go.uber.org/zap"
 
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
 
 // Bootstrap is a wrapper that holds every required thing for the gRPC server starting.
 type Bootstrap struct {
-	Logger  *zap.Logger
-	Storage *storage.Database
+	Logger *zap.Logger
 }
 
 // ListenAnsServer creates a new gRPC instance with all required services.
-func (b *Bootstrap) ListenAnsServer(port int) error {
+func (b *Bootstrap) ListenAnsServer(
+	port int,
+	channel chan *packets.Packet,
+	st *storage.Database,
+) error {
 	// on the local network, listen to a port
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
@@ -35,7 +39,8 @@ func (b *Bootstrap) ListenAnsServer(port int) error {
 	// register all gRPC services
 	database.RegisterDatabaseServer(server, &services.DatabaseService{
 		Logger:  b.Logger.Named("database-svc"),
-		Storage: b.Storage,
+		Storage: st,
+		Channel: channel,
 	})
 
 	// starting the server

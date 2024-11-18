@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/F24-CSE535/2pc/cluster/internal/storage"
+	"github.com/F24-CSE535/2pc/cluster/pkg/packets"
 	"github.com/F24-CSE535/2pc/cluster/pkg/rpc/database"
 
 	"go.uber.org/zap"
@@ -16,6 +17,7 @@ type DatabaseService struct {
 
 	Logger  *zap.Logger
 	Storage *storage.Database
+	Channel chan *packets.Packet
 }
 
 // PrintBalance accepts a printbalance message and returns a printbalance response.

@@ -28,6 +28,7 @@ func (m *Manager) Initialize(logr *zap.Logger, replicas int) {
 
 		// start the CSM inside a go-routine
 		go func(c *ConsensusStateMachine) {
+			logr.Info("Consensus State Machine is running")
 			c.Start()
 		}(&csm)
 	}

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/F24-CSE535/2pc/cluster/internal/csm"
 	"github.com/F24-CSE535/2pc/cluster/internal/grpc"
 	"github.com/F24-CSE535/2pc/cluster/internal/storage"
 
@@ -16,14 +17,21 @@ type node struct {
 
 func (n node) main(port int) {
 	go func() {
-		// create a bootstrap
-		b := grpc.Bootstrap{
-			Logger:  n.logger,
+		// create a new CSM manager
+		manager := csm.Manager{
 			Storage: n.database,
 		}
 
+		// initialize CSMs with desired replica
+		manager.Initialize(n.logger, 1)
+
+		// create a bootstrap
+		b := grpc.Bootstrap{
+			Logger: n.logger,
+		}
+
 		// run the grpc server
-		if err := b.ListenAnsServer(port); err != nil {
+		if err := b.ListenAnsServer(port, manager.Channel, n.database); err != nil {
 			n.logger.Panic("grpc server failed", zap.Error(err))
 		}
 	}()
