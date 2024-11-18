@@ -80,13 +80,17 @@ func (c *Cluster) scaleUp(loger *zap.Logger) error {
 		return fmt.Errorf("failed to open node database connection: %v", err)
 	}
 
-	// clone the shards into the node database
-	sh, err := c.database.GetClusterShard()
-	if err != nil {
-		return fmt.Errorf("failed to get cluster shard: %v", err)
-	}
-	if err := ndb.InsertClusterShard(sh); err != nil {
-		return fmt.Errorf("failed to create new node collections: %v", err)
+	if isEmpty, err := ndb.IsCollectionEmpty(); err != nil {
+		return fmt.Errorf("failed to check collection status: %v", err)
+	} else if isEmpty {
+		// clone the shards into the node database
+		sh, err := c.database.GetClusterShard()
+		if err != nil {
+			return fmt.Errorf("failed to get cluster shard: %v", err)
+		}
+		if err := ndb.InsertClusterShard(sh); err != nil {
+			return fmt.Errorf("failed to create new node collections: %v", err)
+		}
 	}
 
 	// create a new node

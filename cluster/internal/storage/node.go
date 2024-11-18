@@ -24,6 +24,17 @@ func (d *Database) InsertClusterShard(shard []*models.ClientShard) error {
 	return err
 }
 
+// IsCollectionEmpty returns true if the collection is empty.
+func (d *Database) IsCollectionEmpty() (bool, error) {
+	// count the number of documents in the collection
+	count, err := d.clientsCollection.CountDocuments(context.TODO(), bson.D{})
+	if err != nil {
+		return false, err
+	}
+
+	return count == 0, nil
+}
+
 // GetClientBalance returns a balance value by accepting a client.
 func (d *Database) GetClientBalance(client string) (int, error) {
 	// create a filter for the specified cluster
