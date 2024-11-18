@@ -55,7 +55,9 @@ func (m *Manager) Transaction(argc int, argv []string) string {
 	}
 
 	// create a new session
-	session := models.Session{}
+	session := models.Session{
+		Id: sessionId,
+	}
 
 	// check for inter or cross shard
 	if senderCluster == receiverCluster {

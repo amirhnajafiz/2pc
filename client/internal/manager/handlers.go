@@ -10,6 +10,7 @@ import (
 func (m *Manager) handleReply(msg *database.ReplyMsg) {
 	if session, ok := m.cache[int(msg.GetSessionId())]; ok {
 		session.Text = msg.GetText()
+		m.output <- session
 	}
 }
 

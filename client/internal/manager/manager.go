@@ -13,6 +13,7 @@ type Manager struct {
 	storage *storage.Database
 
 	channel chan *models.Packet
+	output  chan *models.Session
 	cache   map[int]*models.Session
 
 	throughput float64
@@ -26,6 +27,8 @@ func NewManager(dialer *grpc.Dialer, storage *storage.Database) *Manager {
 	instance := Manager{
 		dialer:     dialer,
 		storage:    storage,
+		channel:    make(chan *models.Packet),
+		output:     make(chan *models.Session),
 		cache:      make(map[int]*models.Session),
 		throughput: 0,
 		latency:    0,
@@ -41,6 +44,11 @@ func NewManager(dialer *grpc.Dialer, storage *storage.Database) *Manager {
 // GetChannel returns the processor channel.
 func (m *Manager) GetChannel() chan *models.Packet {
 	return m.channel
+}
+
+// GetOutputChannel returns the processor ourput channel.
+func (m *Manager) GetOutputChannel() chan *models.Session {
+	return m.output
 }
 
 // processor receives all gRPC messages to send the replys.
