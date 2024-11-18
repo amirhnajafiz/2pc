@@ -3,6 +3,8 @@ package manager
 import (
 	"fmt"
 	"strconv"
+
+	"github.com/F24-CSE535/2pc/client/pkg/models"
 )
 
 func (m *Manager) Performance() string {
@@ -51,12 +53,20 @@ func (m *Manager) Transaction(argc int, argv []string) string {
 		return fmt.Errorf("database failed: %v", err).Error()
 	}
 
+	// create a new session
+	session := models.Session{}
+
 	// check for inter or cross shard
 	if senderCluster == receiverCluster {
+		session.Type = "inter-shard"
+
 		if err := m.dialer.Request(senderCluster, sender, receiver, amount, sessionId); err != nil {
 			return fmt.Errorf("server failed: %v", err).Error()
 		}
 	}
+
+	// save the transaction into cache
+	m.cache[sessionId] = &session
 
 	return fmt.Sprintf("transaction %d (%s, %s, %d): sent", sessionId, sender, receiver, amount)
 }
