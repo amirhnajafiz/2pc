@@ -48,3 +48,20 @@ func (d *Database) GetClientBalance(client string) (int, error) {
 
 	return int(clientInstance.Balance), nil
 }
+
+// UpdateClientBalance gets a client and new balance to update the balance value.
+func (d *Database) UpdateClientBalance(client string, balance int) error {
+	// create a filter for the specified cluster
+	filter := bson.M{"client": client}
+
+	// define the update operation
+	update := bson.D{{Key: "$set", Value: bson.D{{Key: "balance", Value: balance}}}}
+
+	// perform the update query
+	_, err := d.clientsCollection.UpdateMany(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
