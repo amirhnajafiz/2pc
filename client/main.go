@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/F24-CSE535/2pc/client/internal/commands"
 	grpc "github.com/F24-CSE535/2pc/client/internal/grpc/dialer"
+	"github.com/F24-CSE535/2pc/client/internal/manager/commands"
 	"github.com/F24-CSE535/2pc/client/internal/storage"
 	"github.com/F24-CSE535/2pc/client/internal/utils"
 )
