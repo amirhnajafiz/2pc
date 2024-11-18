@@ -8,16 +8,22 @@ import (
 	"github.com/F24-CSE535/2pc/cluster/pkg/packets"
 	"github.com/F24-CSE535/2pc/cluster/pkg/rpc/database"
 
-	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // DatabaseService is used for handling database RPCs.
 type DatabaseService struct {
 	database.UnimplementedDatabaseServer
 
-	Logger  *zap.Logger
 	Storage *storage.Database
 	Channel chan *packets.Packet
+}
+
+// Request RPC sends a new packet to CSMs.
+func (d *DatabaseService) Request(_ context.Context, msg *database.RequestMsg) (*emptypb.Empty, error) {
+	d.Channel <- &packets.Packet{Label: packets.PktRequest, Payload: msg}
+
+	return &emptypb.Empty{}, nil
 }
 
 // PrintBalance accepts a printbalance message and returns a printbalance response.

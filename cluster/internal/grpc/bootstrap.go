@@ -38,7 +38,6 @@ func (b *Bootstrap) ListenAnsServer(
 
 	// register all gRPC services
 	database.RegisterDatabaseServer(server, &services.DatabaseService{
-		Logger:  b.Logger.Named("database-svc"),
 		Storage: st,
 		Channel: channel,
 	})
