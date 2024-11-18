@@ -31,10 +31,7 @@ func main() {
 	}
 
 	// create a new commands instance
-	cmd := commands.Commands{
-		Dialer:  &grpc.Dialer{Nodes: nodes},
-		Storage: db,
-	}
+	cmd := commands.NewCommands(&grpc.Dialer{Nodes: nodes}, db)
 
 	// in a for loop, read user commands
 	reader := bufio.NewReader(os.Stdin)
@@ -60,6 +57,8 @@ func main() {
 		switch parts[0] {
 		case "printbalance":
 			fmt.Println(cmd.PrintBalance(cargsc, cargs))
+		case "performance":
+			fmt.Println(cmd.Performance())
 		case "exit":
 			return
 		default:
