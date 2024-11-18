@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/F24-CSE535/2pc/client/internal/commands"
 	"github.com/F24-CSE535/2pc/client/internal/grpc"
 	"github.com/F24-CSE535/2pc/client/internal/storage"
 	"github.com/F24-CSE535/2pc/client/internal/utils"
@@ -23,13 +24,16 @@ func main() {
 		panic(err)
 	}
 
-	// create a new dialer
-	dialer := grpc.Dialer{Nodes: nodes}
-
 	// open database connection
 	db, err := storage.NewDatabase(args[2], args[3])
 	if err != nil {
 		panic(err)
+	}
+
+	// create a new commands instance
+	cmd := commands.Commands{
+		Dialer:  &grpc.Dialer{Nodes: nodes},
+		Storage: db,
 	}
 
 	// in a for loop, read user commands
@@ -52,27 +56,14 @@ func main() {
 		cargs := parts[1:]
 		cargsc := len(cargs)
 
+		// switch on the first input as the command
 		switch parts[0] {
 		case "printbalance":
-			// check the number of arguments
-			if cargsc < 1 {
-				fmt.Println("not enough arguments")
-				continue
-			}
-
-			// get the shard
-			cluster, err := db.GetClientShard(cargs[0])
-			if err != nil {
-				fmt.Printf("db failed: %v\n", err)
-				continue
-			}
-
-			// make RPC call
-			if balance, err := dialer.PrintBalance(cluster, cargs[0]); err != nil {
-				fmt.Printf("failed: %v\n", err)
-			} else {
-				fmt.Printf("%s : %d\n", cargs[0], balance)
-			}
+			fmt.Println(cmd.PrintBalance(cargsc, cargs))
+		case "exit":
+			return
+		default:
+			fmt.Printf("command `%s` not found.\n", parts[0])
 		}
 	}
 }
