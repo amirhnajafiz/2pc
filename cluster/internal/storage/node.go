@@ -55,7 +55,7 @@ func (d *Database) UpdateClientBalance(client string, balance int) error {
 	filter := bson.M{"client": client}
 
 	// define the update operation
-	update := bson.D{{Key: "$set", Value: bson.D{{Key: "balance", Value: balance}}}}
+	update := bson.D{{Key: "$inc", Value: bson.D{{Key: "balance", Value: balance}}}}
 
 	// perform the update query
 	_, err := d.clientsCollection.UpdateMany(context.TODO(), filter, update)
