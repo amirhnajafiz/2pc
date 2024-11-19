@@ -10,6 +10,7 @@ import (
 
 // InsertClusterShard gets shard of a cluster and stores them inside clients collection.
 func (d *Database) InsertClusterShard(shard []*models.ClientShard) error {
+	// convert shard model to interface
 	records := make([]interface{}, 0)
 	for _, item := range shard {
 		records = append(records, &models.Client{
@@ -41,8 +42,7 @@ func (d *Database) GetClientBalance(client string) (int, error) {
 
 	// decode the response
 	var clientInstance models.Client
-	err := d.clientsCollection.FindOne(context.TODO(), filter).Decode(&clientInstance)
-	if err != nil {
+	if err := d.clientsCollection.FindOne(context.TODO(), filter).Decode(&clientInstance); err != nil {
 		return 0, err
 	}
 
@@ -50,18 +50,49 @@ func (d *Database) GetClientBalance(client string) (int, error) {
 }
 
 // UpdateClientBalance gets a client and new balance to update the balance value.
-func (d *Database) UpdateClientBalance(client string, balance int) error {
+func (d *Database) UpdateClientBalance(client string, balance int, set bool) error {
 	// create a filter for the specified cluster
 	filter := bson.M{"client": client}
 
 	// define the update operation
-	update := bson.D{{Key: "$inc", Value: bson.D{{Key: "balance", Value: balance}}}}
+	var update bson.D
+	if set {
+		update = bson.D{{Key: "$set", Value: bson.D{{Key: "balance", Value: balance}}}}
+	} else {
+		update = bson.D{{Key: "$inc", Value: bson.D{{Key: "balance", Value: balance}}}}
+	}
 
 	// perform the update query
 	_, err := d.clientsCollection.UpdateMany(context.TODO(), filter, update)
+
+	return err
+}
+
+// InsertWAL adds a new log to the node's logs.
+func (d *Database) InsertWAL(log *models.Log) error {
+	// insert log
+	_, err := d.logsCollection.InsertOne(context.TODO(), log)
+
+	return err
+}
+
+// RetrieveWALs gets a sessionId and returns the logs for that session.
+func (d *Database) RetrieveWALs(sessionId int) ([]*models.Log, error) {
+	// create a filter for the specified cluster
+	filter := bson.M{"session_id": sessionId}
+
+	// find all documents that match the filter
+	cursor, err := d.logsCollection.Find(context.TODO(), filter)
 	if err != nil {
-		return err
+		return nil, err
+	}
+	defer cursor.Close(context.TODO())
+
+	// decode the results into a slice of Logs structs
+	var results []*models.Log
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return nil, err
 	}
 
-	return nil
+	return results, nil
 }

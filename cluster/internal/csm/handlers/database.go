@@ -30,11 +30,11 @@ func (d DatabaseHandler) Request(ra string, trx *database.TransactionMsg) {
 	// check the balance and transaction amount
 	if trx.GetAmount() <= int64(balance) {
 		// update both sender and receiver balance
-		if err := d.storage.UpdateClientBalance(trx.GetSender(), -1*int(trx.GetAmount())); err != nil {
+		if err := d.storage.UpdateClientBalance(trx.GetSender(), -1*int(trx.GetAmount()), false); err != nil {
 			d.logger.Warn("failed to update sender balance", zap.Error(err))
 			return
 		}
-		if err := d.storage.UpdateClientBalance(trx.GetReceiver(), int(trx.GetAmount())); err != nil {
+		if err := d.storage.UpdateClientBalance(trx.GetReceiver(), int(trx.GetAmount()), false); err != nil {
 			d.logger.Warn("failed to update receiver balance", zap.Error(err))
 			return
 		}
