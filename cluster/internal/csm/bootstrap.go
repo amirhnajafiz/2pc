@@ -2,6 +2,7 @@ package csm
 
 import (
 	"github.com/F24-CSE535/2pc/cluster/internal/csm/handlers"
+	"github.com/F24-CSE535/2pc/cluster/internal/grpc/client"
 	"github.com/F24-CSE535/2pc/cluster/internal/storage"
 	"github.com/F24-CSE535/2pc/cluster/pkg/packets"
 
@@ -22,7 +23,7 @@ func (m *Manager) Initialize(logr *zap.Logger, replicas int) {
 	for i := 0; i < replicas; i++ {
 		// create a new CSM
 		csm := ConsensusStateMachine{
-			databaseHandler: handlers.NewDatabaseHandler(m.Storage, logr.Named("csm-handler")),
+			databaseHandler: handlers.NewDatabaseHandler(m.Storage, logr.Named("csm-handler"), client.NewClient("csm")),
 			channel:         m.Channel,
 		}
 

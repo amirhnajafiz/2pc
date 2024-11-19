@@ -21,7 +21,8 @@ func (c *ConsensusStateMachine) Start() {
 		// case on packet label
 		switch pkt.Label {
 		case packets.PktRequest:
-			c.databaseHandler.Request(pkt.Payload.(*database.RequestMsg).GetTransaction())
+			msg := pkt.Payload.(*database.RequestMsg)
+			c.databaseHandler.Request(msg.GetReturnAddress(), msg.GetTransaction())
 		case packets.PktPrepare:
 			c.databaseHandler.Prepare()
 		case packets.PktCommit:

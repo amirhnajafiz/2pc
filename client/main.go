@@ -63,6 +63,7 @@ func main() {
 		switch parts[0] {
 		case "transaction":
 			fmt.Println(mg.Transaction(cargsc, cargs))
+
 			session := <-mg.GetOutputChannel()
 			fmt.Printf("%d: %s\n", session.Id, session.Text)
 		case "rt":
