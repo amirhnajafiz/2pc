@@ -13,8 +13,7 @@ import (
 
 // Dialer is a module for making RPC calls from client to clusters.
 type Dialer struct {
-	Address string
-	Nodes   map[string][]string
+	Nodes map[string][]string
 }
 
 // connect should be called in the beginning of each method to establish a connection.
@@ -47,7 +46,7 @@ func (d *Dialer) Request(target, sender, receiver string, amount, sessionId int)
 			Amount:    int64(amount),
 			SessionId: int64(sessionId),
 		},
-		ReturnAddress: d.Address, // set the return address
+		ReturnAddress: d.Nodes["client"][0], // set the return address
 	}); err != nil {
 		return err
 	}
@@ -72,7 +71,7 @@ func (d *Dialer) Prepare(target, sender, receiver string, amount, sessionId int)
 			Amount:    int64(amount),
 			SessionId: int64(sessionId),
 		},
-		ReturnAddress: d.Address, // set the return address
+		ReturnAddress: d.Nodes["client"][0], // set the return address
 	}); err != nil {
 		return err
 	}
@@ -91,8 +90,8 @@ func (d *Dialer) Commit(target string, sessionId int) error {
 
 	// call Commit RPC
 	if _, err = database.NewDatabaseClient(conn).Commit(context.Background(), &database.CommitMsg{
-		SessionId:     int64(sessionId), // set the session id
-		ReturnAddress: d.Address,        // set the return address
+		SessionId:     int64(sessionId),     // set the session id
+		ReturnAddress: d.Nodes["client"][0], // set the return address
 	}); err != nil {
 		return err
 	}
