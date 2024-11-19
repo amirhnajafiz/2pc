@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	grpc "github.com/F24-CSE535/2pc/client/internal/grpc/dialer"
 	"github.com/F24-CSE535/2pc/client/internal/grpc/server"
@@ -39,6 +40,9 @@ func main() {
 	port, _ := strconv.Atoi(args[4])
 	go server.StartNewServer(port, mg.GetChannel())
 
+	// wait one second for the server setup
+	time.Sleep(1 * time.Second)
+
 	// in a for loop, read user commands
 	reader := bufio.NewReader(os.Stdin)
 	for {
@@ -65,7 +69,7 @@ func main() {
 			fmt.Println(mg.Transaction(cargsc, cargs))
 
 			session := <-mg.GetOutputChannel()
-			fmt.Printf("%d: %s\n", session.Id, session.Text)
+			fmt.Printf("transaction %d: %s\n", session.Id, session.Text)
 		case "rt":
 			fmt.Println(mg.RoundTrip(cargsc, cargs))
 		case "printbalance":
