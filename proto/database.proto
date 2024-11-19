@@ -39,7 +39,8 @@ message ReplyMsg {
 // prepare is used in the first phase of 2pc.
 message PrepareMsg {
   TransactionMsg transaction = 1;
-  string return_address = 2;
+  string client = 2;
+  string return_address = 3;
 }
 
 // ack is returned by nodes for 2pc.

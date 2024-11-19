@@ -60,7 +60,7 @@ func (d DatabaseHandler) Request(ra string, trx *database.TransactionMsg) {
 	}
 }
 
-func (d DatabaseHandler) Prepare() {
+func (d DatabaseHandler) Prepare(ra string, trx *database.TransactionMsg) {
 
 }
 

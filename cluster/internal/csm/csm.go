@@ -24,7 +24,7 @@ func (c *ConsensusStateMachine) Start() {
 			msg := pkt.Payload.(*database.RequestMsg)
 			c.databaseHandler.Request(msg.GetReturnAddress(), msg.GetTransaction())
 		case packets.PktPrepare:
-			c.databaseHandler.Prepare()
+			c.databaseHandler.Prepare("", nil)
 		case packets.PktCommit:
 			c.databaseHandler.Commit()
 		case packets.PktAbort:
