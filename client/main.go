@@ -76,6 +76,24 @@ func main() {
 			fmt.Println(mg.PrintBalance(cargsc, cargs))
 		case "performance":
 			fmt.Println(mg.Performance())
+		case "printdatastore":
+			ds, msg := mg.PrintDatastore(cargsc, cargs)
+			if ds == nil {
+				fmt.Println(msg)
+			} else {
+				for _, st := range ds {
+					fmt.Println(st)
+				}
+			}
+		case "printlogs":
+			logs, msg := mg.PrintLogs(cargsc, cargs)
+			if logs == nil {
+				fmt.Println(msg)
+			} else {
+				for _, st := range logs {
+					fmt.Println(st)
+				}
+			}
 		case "exit":
 			return
 		default:
