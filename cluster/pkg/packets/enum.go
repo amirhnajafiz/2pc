@@ -6,4 +6,7 @@ const (
 	PktPrepare
 	PktCommit
 	PktAbort
+	PktPaxosAccept
+	PktPaxosAccepted
+	PktPaxosCommit
 )
