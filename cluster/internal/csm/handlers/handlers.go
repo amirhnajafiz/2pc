@@ -4,6 +4,7 @@ import (
 	"github.com/F24-CSE535/2pc/cluster/internal/grpc/client"
 	"github.com/F24-CSE535/2pc/cluster/internal/lock"
 	"github.com/F24-CSE535/2pc/cluster/internal/storage"
+	"github.com/F24-CSE535/2pc/cluster/pkg/packets"
 
 	"go.uber.org/zap"
 )
@@ -19,9 +20,10 @@ func NewDatabaseHandler(st *storage.Database, logr *zap.Logger, client *client.C
 }
 
 // NewPaxosHandler returns an instance paxos handler.
-func NewPaxosHandler(logr *zap.Logger, client *client.Client) *PaxosHandler {
+func NewPaxosHandler(channel chan *packets.Packet, logr *zap.Logger, client *client.Client) *PaxosHandler {
 	return &PaxosHandler{
-		logger: logr,
-		client: client,
+		channel: channel,
+		logger:  logr,
+		client:  client,
 	}
 }

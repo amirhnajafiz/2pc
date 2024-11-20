@@ -22,14 +22,14 @@ func (c *ConsensusStateMachine) Start() {
 
 		// case on packet label
 		switch pkt.Label {
-		case packets.PktRequest:
+		case packets.PktDatabaseRequest:
 			msg := pkt.Payload.(*database.RequestMsg)
 			c.databaseHandler.Request(msg.GetReturnAddress(), msg.GetTransaction())
-		case packets.PktPrepare:
+		case packets.PktDatabasePrepare:
 			c.databaseHandler.Prepare(pkt.Payload.(*database.PrepareMsg))
-		case packets.PktCommit:
+		case packets.PktDatabaseCommit:
 			c.databaseHandler.Commit(pkt.Payload.(*database.CommitMsg))
-		case packets.PktAbort:
+		case packets.PktDatabaseAbort:
 			c.databaseHandler.Abort(int(pkt.Payload.(*database.AbortMsg).GetSessionId()))
 		case packets.PktPaxosAccept:
 			c.paxosHandler.Accept(pkt.Payload.(*paxos.AcceptMsg))

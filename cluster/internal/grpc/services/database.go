@@ -21,28 +21,28 @@ type DatabaseService struct {
 
 // Request RPC sends a new request packet to CSMs.
 func (d *DatabaseService) Request(_ context.Context, msg *database.RequestMsg) (*emptypb.Empty, error) {
-	d.Channel <- &packets.Packet{Label: packets.PktRequest, Payload: msg}
+	d.Channel <- &packets.Packet{Label: packets.PktDatabaseRequest, Payload: msg}
 
 	return &emptypb.Empty{}, nil
 }
 
 // Prepare RPC sends a new prepare packet to CSMs.
 func (d *DatabaseService) Prepare(_ context.Context, msg *database.PrepareMsg) (*emptypb.Empty, error) {
-	d.Channel <- &packets.Packet{Label: packets.PktPrepare, Payload: msg}
+	d.Channel <- &packets.Packet{Label: packets.PktDatabasePrepare, Payload: msg}
 
 	return &emptypb.Empty{}, nil
 }
 
 // Commit RPC sends a new commit packet to CSMs.
 func (d *DatabaseService) Commit(_ context.Context, msg *database.CommitMsg) (*emptypb.Empty, error) {
-	d.Channel <- &packets.Packet{Label: packets.PktCommit, Payload: msg}
+	d.Channel <- &packets.Packet{Label: packets.PktDatabaseCommit, Payload: msg}
 
 	return &emptypb.Empty{}, nil
 }
 
 // Abort RPC sends a new abort packet to CSMs.
 func (d *DatabaseService) Abort(_ context.Context, msg *database.AbortMsg) (*emptypb.Empty, error) {
-	d.Channel <- &packets.Packet{Label: packets.PktAbort, Payload: msg}
+	d.Channel <- &packets.Packet{Label: packets.PktDatabaseAbort, Payload: msg}
 
 	return &emptypb.Empty{}, nil
 }

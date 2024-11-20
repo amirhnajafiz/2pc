@@ -26,7 +26,7 @@ func (m *Manager) Initialize(logr *zap.Logger, replicas int) {
 		// create a new CSM
 		csm := ConsensusStateMachine{
 			databaseHandler: handlers.NewDatabaseHandler(m.Storage, logr.Named("csm-db-handler"), client.NewClient("csm"), m.LockManager),
-			paxosHandler:    handlers.NewPaxosHandler(logr.Named("csm-paxos-handler"), client.NewClient("csm")),
+			paxosHandler:    handlers.NewPaxosHandler(m.Channel, logr.Named("csm-paxos-handler"), client.NewClient("csm")),
 			channel:         m.Channel,
 		}
 
