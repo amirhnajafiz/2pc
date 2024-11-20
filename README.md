@@ -42,6 +42,14 @@ Accept a client, find the cluster, send a request to get the client balance.
 
 Calculate the system's performance when sending a request.
 
+### PrintLogs
+
+Accept a target and prints its logs.
+
+### PrintDatastore
+
+Accept a target and prints its committed transactions.
+
 ### 2PC
 
 In order to process a transaction, the client reads transactions from a `csv` file. For each transaction, the client triggers an inter-shard or cross-shard procedure based on the clusters that are needed in processing the transaction.
@@ -63,6 +71,8 @@ The cluster manager looks a collection called `events` in the database. In an in
 Each node has a `gRPC` interface that accepts `RPC` calls from both client and other nodes. A list of these `RPC` calls are as follow.
 
 - `PrintBalance` : accepts a client name and returns its balance.
+- `PrintLogs` : returns all write-ahead logs inside this node.
+- `PrintDatastore` : returns all committed transactions inside this node.
 
 ### 2PL
 
@@ -73,7 +83,7 @@ Each server has a local lock for input transactions. If a lock is being set, the
 For each operation, the server logs the operations in the following manner.
 
 ```
-<T1, Init>
-<T1, Client, Old, New>
+<T1, Start>
+<T1, Update, Record, New>
 <T1, Commit/Abort>
 ```

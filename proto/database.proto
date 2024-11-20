@@ -14,6 +14,8 @@ service Database {
   rpc Commit(CommitMsg) returns (google.protobuf.Empty) {}
   rpc Abort(AbortMsg) returns (google.protobuf.Empty) {}
   rpc PrintBalance(PrintBalanceMsg) returns (PrintBalanceRsp) {}
+  rpc PrintLogs(google.protobuf.Empty) returns (stream LogRsp) {}
+  rpc PrintDatastore(google.protobuf.Empty) returns (stream DatastoreRsp) {}
 }
 
 // transaction contains our units of work.
@@ -69,4 +71,15 @@ message PrintBalanceMsg {
 message PrintBalanceRsp {
   string client = 1;
   int64 balance = 2;
+}
+
+message LogRsp {
+  string record = 1;
+  string message = 2;
+  int64 session_id = 3;
+  int64 new_value = 4;
+}
+
+message DatastoreRsp {
+  int64 session_id = 1;
 }
