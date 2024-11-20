@@ -3,7 +3,6 @@ package grpc
 import (
 	"context"
 	"fmt"
-	"math/rand"
 
 	"github.com/F24-CSE535/2pc/client/pkg/rpc/database"
 
@@ -13,13 +12,12 @@ import (
 
 // Dialer is a module for making RPC calls from client to clusters.
 type Dialer struct {
-	Nodes map[string][]string
+	Nodes map[string]string
 }
 
 // connect should be called in the beginning of each method to establish a connection.
 func (d *Dialer) connect(target string) (*grpc.ClientConn, error) {
-	randomIndex := rand.Intn(len(d.Nodes[target]))
-	address := d.Nodes[target][randomIndex]
+	address := d.Nodes[d.Nodes[target]]
 
 	conn, err := grpc.NewClient(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -46,7 +44,7 @@ func (d *Dialer) Request(target, sender, receiver string, amount, sessionId int)
 			Amount:    int64(amount),
 			SessionId: int64(sessionId),
 		},
-		ReturnAddress: d.Nodes["client"][0], // set the return address
+		ReturnAddress: d.Nodes["client"], // set the return address
 	}); err != nil {
 		return err
 	}
@@ -71,8 +69,8 @@ func (d *Dialer) Prepare(target, client, sender, receiver string, amount, sessio
 			Amount:    int64(amount),
 			SessionId: int64(sessionId),
 		},
-		Client:        client,               // set the client for cluster usage
-		ReturnAddress: d.Nodes["client"][0], // set the return address
+		Client:        client,            // set the client for cluster usage
+		ReturnAddress: d.Nodes["client"], // set the return address
 	}); err != nil {
 		return err
 	}
@@ -91,8 +89,8 @@ func (d *Dialer) Commit(target string, sessionId int) error {
 
 	// call Commit RPC
 	if _, err = database.NewDatabaseClient(conn).Commit(context.Background(), &database.CommitMsg{
-		SessionId:     int64(sessionId),     // set the session id
-		ReturnAddress: d.Nodes["client"][0], // set the return address
+		SessionId:     int64(sessionId),  // set the session id
+		ReturnAddress: d.Nodes["client"], // set the return address
 	}); err != nil {
 		return err
 	}
