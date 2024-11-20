@@ -56,12 +56,14 @@ func (m *Manager) Transaction(argc int, argv []string) string {
 
 	// create a new session
 	session := models.Session{
-		Id: sessionId,
+		Id:     sessionId,
+		Replys: make([]*database.ReplyMsg, 0),
 	}
 
 	// check for inter or cross shard
 	if senderCluster == receiverCluster {
 		session.Type = "inter-shard"
+		session.Participants = []string{senderCluster}
 
 		// for inter-shard send request message to the cluster
 		if err := m.dialer.Request(senderCluster, sender, receiver, amount, sessionId); err != nil {

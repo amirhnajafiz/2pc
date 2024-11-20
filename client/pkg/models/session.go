@@ -9,4 +9,5 @@ type Session struct {
 	Id           int
 	Participants []string
 	Acks         []*database.AckMsg
+	Replys       []*database.ReplyMsg
 }

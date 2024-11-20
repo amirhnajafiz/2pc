@@ -9,8 +9,14 @@ import (
 // handleReply accepts a reply message for an active session.
 func (m *Manager) handleReply(msg *database.ReplyMsg) {
 	if session, ok := m.cache[int(msg.GetSessionId())]; ok {
-		session.Text = msg.GetText()
-		m.output <- session
+		// append the reply to the list
+		session.Replys = append(session.Replys, msg)
+
+		// check for the number of replys
+		if len(session.Replys) == len(session.Participants) {
+			// return the message to client
+			m.output <- session
+		}
 	}
 }
 
