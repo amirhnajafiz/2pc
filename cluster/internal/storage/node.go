@@ -92,7 +92,10 @@ func (d *Database) InsertBatchWAL(logs []*models.Log) error {
 // RetrieveWALs gets a sessionId and returns the logs for that session.
 func (d *Database) RetrieveWALs(sessionId int) ([]*models.Log, error) {
 	// create a filter for the specified cluster
-	filter := bson.M{"session_id": sessionId}
+	filter := bson.M{
+		"session_id": sessionId,
+		"message":    "update",
+	}
 
 	// find all documents that match the filter
 	cursor, err := d.logsCollection.Find(context.TODO(), filter)

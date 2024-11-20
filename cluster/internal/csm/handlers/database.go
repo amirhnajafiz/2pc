@@ -4,6 +4,7 @@ import (
 	"github.com/F24-CSE535/2pc/cluster/internal/grpc/client"
 	"github.com/F24-CSE535/2pc/cluster/internal/storage"
 	"github.com/F24-CSE535/2pc/cluster/pkg/enums"
+	"github.com/F24-CSE535/2pc/cluster/pkg/models"
 	"github.com/F24-CSE535/2pc/cluster/pkg/rpc/database"
 
 	"go.uber.org/zap"
@@ -60,14 +61,80 @@ func (d DatabaseHandler) Request(ra string, trx *database.TransactionMsg) {
 	}
 }
 
-func (d DatabaseHandler) Prepare(ra string, trx *database.TransactionMsg) {
+// Prepare accepts a prepare message and returns ack to the sender.
+func (d DatabaseHandler) Prepare(msg *database.PrepareMsg) {
+	// get sessionId
+	sessionId := int(msg.Transaction.GetSessionId())
 
+	// create a list of WALs
+	wals := make([]*models.Log, 0)
+	wals = append(wals, &models.Log{SessionId: sessionId, Message: "start"})
+
+	// abort flag
+	abort := false
+
+	// for (S, R, amount) we want to check if the client is S to check its balance
+	if msg.GetTransaction().GetSender() == msg.GetClient() {
+		// get our client balance
+		balance, err := d.storage.GetClientBalance(msg.GetClient())
+		if err != nil {
+			d.logger.Warn("failed to get client balance", zap.Error(err))
+			return
+		}
+
+		// add a log
+		wals = append(wals, &models.Log{SessionId: sessionId, Message: "update", Record: msg.GetTransaction().GetSender(), NewValue: -1 * int(msg.GetTransaction().GetAmount())})
+
+		// check if the balance is enough
+		if msg.GetTransaction().GetAmount() > int64(balance) {
+			// the balance is not enough
+			abort = true
+		}
+	} else {
+		// add a log
+		wals = append(wals, &models.Log{SessionId: sessionId, Message: "update", Record: msg.GetTransaction().GetReceiver(), NewValue: int(msg.GetTransaction().GetAmount())})
+	}
+
+	// store the logs
+	if err := d.storage.InsertBatchWAL(wals); err != nil {
+		d.logger.Warn("failed to store logs", zap.Error(err))
+		return
+	}
+
+	// send the ack message
+	if err := d.client.Ack(msg.GetReturnAddress(), sessionId, abort); err != nil {
+		d.logger.Warn("failed to send ack message", zap.Error(err))
+		return
+	}
 }
 
-func (d DatabaseHandler) Commit() {
+// Commit accepts a commit message to get WALs and update the records.
+func (d DatabaseHandler) Commit(msg *database.CommitMsg) {
+	// get sessionId
+	sessionId := int(msg.GetSessionId())
 
+	// get all update logs
+	wals, err := d.storage.RetrieveWALs(sessionId)
+	if err != nil {
+		d.logger.Warn("failed to get logs", zap.Error(err))
+		return
+	}
+
+	// update clients
+	for _, wal := range wals {
+		if err := d.storage.UpdateClientBalance(wal.Record, wal.NewValue, false); err != nil {
+			d.logger.Warn("failed to update balance", zap.Error(err), zap.String("client", wal.Record))
+			return
+		}
+	}
+
+	// call the reply RPC on client
+	if err := d.client.Reply(msg.GetReturnAddress(), enums.RespOK, sessionId); err != nil {
+		d.logger.Warn("failed to call reply", zap.String("client address", msg.GetReturnAddress()))
+	}
 }
 
+// Abort will log an abort log into the logs.
 func (d DatabaseHandler) Abort() {
 
 }
