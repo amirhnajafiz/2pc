@@ -15,6 +15,7 @@ func (m *Manager) handleReply(msg *database.ReplyMsg) {
 		// check for the number of replys
 		if len(session.Replys) == len(session.Participants) {
 			// return the message to client
+			session.Text = msg.GetText()
 			m.output <- session
 		}
 	}

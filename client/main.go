@@ -41,7 +41,7 @@ func main() {
 	go server.StartNewServer(port, mg.GetChannel())
 
 	// wait one second for the server setup
-	time.Sleep(1 * time.Second)
+	time.Sleep(2 * time.Second)
 
 	// in a for loop, read user commands
 	reader := bufio.NewReader(os.Stdin)

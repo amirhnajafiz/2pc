@@ -18,6 +18,7 @@ type Dialer struct {
 // connect should be called in the beginning of each method to establish a connection.
 func (d *Dialer) connect(target string) (*grpc.ClientConn, error) {
 	address := d.Nodes[d.Nodes[target]]
+	fmt.Println(address)
 
 	conn, err := grpc.NewClient(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
