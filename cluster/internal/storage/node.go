@@ -76,6 +76,19 @@ func (d *Database) InsertWAL(log *models.Log) error {
 	return err
 }
 
+// InsertBatchWALs into the database.
+func (d *Database) InsertBatchWAL(logs []*models.Log) error {
+	// convert log model to interface
+	records := make([]interface{}, 0)
+	for _, item := range logs {
+		records = append(records, item)
+	}
+
+	_, err := d.logsCollection.InsertMany(context.TODO(), records)
+
+	return err
+}
+
 // RetrieveWALs gets a sessionId and returns the logs for that session.
 func (d *Database) RetrieveWALs(sessionId int) ([]*models.Log, error) {
 	// create a filter for the specified cluster
