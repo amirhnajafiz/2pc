@@ -128,6 +128,15 @@ func (d DatabaseHandler) Commit(msg *database.CommitMsg) {
 		}
 	}
 
+	// store a commit log
+	if err := d.storage.InsertWAL(&models.Log{
+		SessionId: sessionId,
+		Message:   "commit",
+	}); err != nil {
+		d.logger.Warn("failed to store log", zap.Error(err))
+		return
+	}
+
 	// call the reply RPC on client
 	if err := d.client.Reply(msg.GetReturnAddress(), enums.RespOK, sessionId); err != nil {
 		d.logger.Warn("failed to call reply", zap.String("client address", msg.GetReturnAddress()))
@@ -135,6 +144,11 @@ func (d DatabaseHandler) Commit(msg *database.CommitMsg) {
 }
 
 // Abort will log an abort log into the logs.
-func (d DatabaseHandler) Abort() {
-
+func (d DatabaseHandler) Abort(sessionId int) {
+	if err := d.storage.InsertWAL(&models.Log{
+		SessionId: sessionId,
+		Message:   "abort",
+	}); err != nil {
+		d.logger.Warn("failed to store log", zap.Error(err))
+	}
 }

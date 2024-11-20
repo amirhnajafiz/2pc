@@ -28,7 +28,7 @@ func (c *ConsensusStateMachine) Start() {
 		case packets.PktCommit:
 			c.databaseHandler.Commit(pkt.Payload.(*database.CommitMsg))
 		case packets.PktAbort:
-			c.databaseHandler.Abort()
+			c.databaseHandler.Abort(int(pkt.Payload.(*database.AbortMsg).GetSessionId()))
 		}
 	}
 }
