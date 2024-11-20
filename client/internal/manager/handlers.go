@@ -32,7 +32,7 @@ func (m *Manager) handleAck(msg *database.AckMsg) {
 			// if any is aborted, then abort all
 			for _, item := range session.Acks {
 				if item.IsAborted {
-					log.Printf("transaction %d is aborted.\n", session.Id)
+					log.Printf("transaction %d: aborted.\n", session.Id)
 
 					for _, address := range session.Participants {
 						if err := m.dialer.Abort(address, session.Id); err != nil {

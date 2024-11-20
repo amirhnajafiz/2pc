@@ -4,6 +4,7 @@ import (
 	grpc "github.com/F24-CSE535/2pc/client/internal/grpc/dialer"
 	"github.com/F24-CSE535/2pc/client/internal/memory"
 	"github.com/F24-CSE535/2pc/client/internal/storage"
+	"github.com/F24-CSE535/2pc/client/pkg/enums"
 	"github.com/F24-CSE535/2pc/client/pkg/models"
 	"github.com/F24-CSE535/2pc/client/pkg/rpc/database"
 )
@@ -62,9 +63,9 @@ func (m *Manager) processor() {
 
 		// switch case for packet label
 		switch pkt.Label {
-		case "reply":
+		case enums.PktReply:
 			m.handleReply(pkt.Payload.(*database.ReplyMsg))
-		case "ack":
+		case enums.PktAck:
 			m.handleAck(pkt.Payload.(*database.AckMsg))
 		}
 	}
