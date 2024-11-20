@@ -87,3 +87,26 @@ For each operation, the server logs the operations in the following manner.
 <T1, Update, Record, New>
 <T1, Commit/Abort>
 ```
+
+### Paxos
+
+Each server has the following RPCs to perform `multi-paxos` when receiving `request` and `prepare` messages.
+
+- `ping` : the leader calls this every `N` seconds. if a follower does not get `ping`s from the leader, it will send `ping` itself until one leader is selected. In the `ping-pong` process, leader and followers update themselves to sync each other.
+- `pong` : the followers return the ping answer for any sync process.
+- `accept` : the leader calls accept on every cluster node to update their accepted num and accepted val.
+- `commit` : the leader calls commit on getting `f+1` accepted messages.
+
+#### Ping-Pong
+
+On `ping` operation, leaders sends its last accepted ballot-number and it's id to all nodes. The nodes get this message and call `pong` if the server is left behind. Otherwise, they update themselves.
+
+If the leader does not send `ping`s after a while. All follower nodes start `ping` others and the node with higher id will become the new leader.
+
+#### Accept
+
+When getting a request, the node will call `accept` on all nodes. If it is not the leader, it will call the procedure on the leader node. Other nodes update their status and logs to follow the leader.
+
+#### Commit
+
+When the leader gets `f+1` accepted messages, it will send `commit` message and execute the request.
