@@ -32,6 +32,51 @@ func (m *Manager) PrintBalance(argc int, argv []string) string {
 	}
 }
 
+func (m *Manager) PrintLogs(argc int, argv []string) ([]string, string) {
+	// check the number of arguments
+	if argc < 1 {
+		return nil, "not enough arguments"
+	}
+
+	// make RPC call
+	if list, err := m.dialer.PrintLogs(argv[0]); err != nil {
+		return nil, err.Error()
+	} else {
+		return list, ""
+	}
+}
+
+func (m *Manager) PrintDatastore(argc int, argv []string) ([]string, string) {
+	// check the number of arguments
+	if argc < 1 {
+		return nil, "not enough arguments"
+	}
+
+	// make RPC call
+	list, err := m.dialer.PrintDatastore(argv[0])
+	if err != nil {
+		return nil, err.Error()
+	}
+
+	// create sessions records
+	records := make([]string, 0)
+	for _, id := range list {
+		if value, ok := m.cache[id]; ok {
+			records = append(
+				records,
+				fmt.Sprintf(
+					"transaction %d (%s, %s, %d)",
+					value.Id,
+					value.Sender,
+					value.Receiver,
+					value.Amount),
+			)
+		}
+	}
+
+	return records, ""
+}
+
 func (m *Manager) Transaction(argc int, argv []string) string {
 	// check the number of arguments
 	if argc < 3 {
@@ -56,8 +101,11 @@ func (m *Manager) Transaction(argc int, argv []string) string {
 
 	// create a new session
 	session := models.Session{
-		Id:     sessionId,
-		Replys: make([]*database.ReplyMsg, 0),
+		Id:       sessionId,
+		Sender:   sender,
+		Receiver: receiver,
+		Amount:   amount,
+		Replys:   make([]*database.ReplyMsg, 0),
 	}
 
 	// check for inter or cross shard
