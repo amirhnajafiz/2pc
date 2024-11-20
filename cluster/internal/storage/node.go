@@ -92,10 +92,54 @@ func (d *Database) InsertBatchWAL(logs []*models.Log) error {
 
 // RetrieveWALs gets a sessionId and returns the logs for that session.
 func (d *Database) RetrieveWALs(sessionId int) ([]*models.Log, error) {
-	// create a filter for the specified cluster
+	// create a filter for the specified log
 	filter := bson.M{
 		"session_id": sessionId,
 		"message":    enums.WALUpdate,
+	}
+
+	// find all documents that match the filter
+	cursor, err := d.logsCollection.Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.TODO())
+
+	// decode the results into a slice of Logs structs
+	var results []*models.Log
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
+
+// GetWALs returns all write-ahead logs.
+func (d *Database) GetWALs() ([]*models.Log, error) {
+	// create a filter for all
+	filter := bson.M{}
+
+	// find all documents that match the filter
+	cursor, err := d.logsCollection.Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.TODO())
+
+	// decode the results into a slice of Logs structs
+	var results []*models.Log
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
+
+// GetCommitteds returns all committed WALs.
+func (d *Database) GetCommitteds() ([]*models.Log, error) {
+	// create a filter for the specified log
+	filter := bson.M{
+		"message": enums.WALCommit,
 	}
 
 	// find all documents that match the filter

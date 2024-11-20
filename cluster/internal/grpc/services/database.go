@@ -59,3 +59,44 @@ func (d *DatabaseService) PrintBalance(_ context.Context, msg *database.PrintBal
 		Balance: int64(balance),
 	}, nil
 }
+
+// PrintLogs returns all WALs inside this node.
+func (d *DatabaseService) PrintLogs(_ *emptypb.Empty, stream database.Database_PrintLogsServer) error {
+	wals, err := d.Storage.GetWALs()
+	if err != nil {
+		return fmt.Errorf("database failed: %v", err)
+	}
+
+	// send logs one by one
+	for _, wal := range wals {
+		if err := stream.Send(&database.LogRsp{
+			Record:    wal.Record,
+			Message:   wal.Message,
+			SessionId: int64(wal.SessionId),
+			NewValue:  int64(wal.NewValue),
+		}); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// PrintDatastore returns all committed transactions inside this node.
+func (d *DatabaseService) PrintDatastore(_ *emptypb.Empty, stream database.Database_PrintDatastoreServer) error {
+	wals, err := d.Storage.GetCommitteds()
+	if err != nil {
+		return fmt.Errorf("database failed: %v", err)
+	}
+
+	// send datastore one by one
+	for _, wal := range wals {
+		if err := stream.Send(&database.DatastoreRsp{
+			SessionId: int64(wal.SessionId),
+		}); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

@@ -20,13 +20,15 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Database_Request_FullMethodName      = "/database.Database/Request"
-	Database_Reply_FullMethodName        = "/database.Database/Reply"
-	Database_Prepare_FullMethodName      = "/database.Database/Prepare"
-	Database_Ack_FullMethodName          = "/database.Database/Ack"
-	Database_Commit_FullMethodName       = "/database.Database/Commit"
-	Database_Abort_FullMethodName        = "/database.Database/Abort"
-	Database_PrintBalance_FullMethodName = "/database.Database/PrintBalance"
+	Database_Request_FullMethodName        = "/database.Database/Request"
+	Database_Reply_FullMethodName          = "/database.Database/Reply"
+	Database_Prepare_FullMethodName        = "/database.Database/Prepare"
+	Database_Ack_FullMethodName            = "/database.Database/Ack"
+	Database_Commit_FullMethodName         = "/database.Database/Commit"
+	Database_Abort_FullMethodName          = "/database.Database/Abort"
+	Database_PrintBalance_FullMethodName   = "/database.Database/PrintBalance"
+	Database_PrintLogs_FullMethodName      = "/database.Database/PrintLogs"
+	Database_PrintDatastore_FullMethodName = "/database.Database/PrintDatastore"
 )
 
 // DatabaseClient is the client API for Database service.
@@ -42,6 +44,8 @@ type DatabaseClient interface {
 	Commit(ctx context.Context, in *CommitMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Abort(ctx context.Context, in *AbortMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	PrintBalance(ctx context.Context, in *PrintBalanceMsg, opts ...grpc.CallOption) (*PrintBalanceRsp, error)
+	PrintLogs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogRsp], error)
+	PrintDatastore(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DatastoreRsp], error)
 }
 
 type databaseClient struct {
@@ -122,6 +126,44 @@ func (c *databaseClient) PrintBalance(ctx context.Context, in *PrintBalanceMsg, 
 	return out, nil
 }
 
+func (c *databaseClient) PrintLogs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogRsp], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &Database_ServiceDesc.Streams[0], Database_PrintLogs_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[emptypb.Empty, LogRsp]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Database_PrintLogsClient = grpc.ServerStreamingClient[LogRsp]
+
+func (c *databaseClient) PrintDatastore(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DatastoreRsp], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &Database_ServiceDesc.Streams[1], Database_PrintDatastore_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[emptypb.Empty, DatastoreRsp]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Database_PrintDatastoreClient = grpc.ServerStreamingClient[DatastoreRsp]
+
 // DatabaseServer is the server API for Database service.
 // All implementations must embed UnimplementedDatabaseServer
 // for forward compatibility.
@@ -135,6 +177,8 @@ type DatabaseServer interface {
 	Commit(context.Context, *CommitMsg) (*emptypb.Empty, error)
 	Abort(context.Context, *AbortMsg) (*emptypb.Empty, error)
 	PrintBalance(context.Context, *PrintBalanceMsg) (*PrintBalanceRsp, error)
+	PrintLogs(*emptypb.Empty, grpc.ServerStreamingServer[LogRsp]) error
+	PrintDatastore(*emptypb.Empty, grpc.ServerStreamingServer[DatastoreRsp]) error
 	mustEmbedUnimplementedDatabaseServer()
 }
 
@@ -165,6 +209,12 @@ func (UnimplementedDatabaseServer) Abort(context.Context, *AbortMsg) (*emptypb.E
 }
 func (UnimplementedDatabaseServer) PrintBalance(context.Context, *PrintBalanceMsg) (*PrintBalanceRsp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PrintBalance not implemented")
+}
+func (UnimplementedDatabaseServer) PrintLogs(*emptypb.Empty, grpc.ServerStreamingServer[LogRsp]) error {
+	return status.Errorf(codes.Unimplemented, "method PrintLogs not implemented")
+}
+func (UnimplementedDatabaseServer) PrintDatastore(*emptypb.Empty, grpc.ServerStreamingServer[DatastoreRsp]) error {
+	return status.Errorf(codes.Unimplemented, "method PrintDatastore not implemented")
 }
 func (UnimplementedDatabaseServer) mustEmbedUnimplementedDatabaseServer() {}
 func (UnimplementedDatabaseServer) testEmbeddedByValue()                  {}
@@ -313,6 +363,28 @@ func _Database_PrintBalance_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Database_PrintLogs_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(emptypb.Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(DatabaseServer).PrintLogs(m, &grpc.GenericServerStream[emptypb.Empty, LogRsp]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Database_PrintLogsServer = grpc.ServerStreamingServer[LogRsp]
+
+func _Database_PrintDatastore_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(emptypb.Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(DatabaseServer).PrintDatastore(m, &grpc.GenericServerStream[emptypb.Empty, DatastoreRsp]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Database_PrintDatastoreServer = grpc.ServerStreamingServer[DatastoreRsp]
+
 // Database_ServiceDesc is the grpc.ServiceDesc for Database service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -349,6 +421,17 @@ var Database_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Database_PrintBalance_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "PrintLogs",
+			Handler:       _Database_PrintLogs_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "PrintDatastore",
+			Handler:       _Database_PrintDatastore_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "database.proto",
 }
