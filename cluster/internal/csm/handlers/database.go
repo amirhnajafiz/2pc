@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/F24-CSE535/2pc/cluster/internal/grpc/client"
+	"github.com/F24-CSE535/2pc/cluster/internal/lock"
 	"github.com/F24-CSE535/2pc/cluster/internal/storage"
 	"github.com/F24-CSE535/2pc/cluster/pkg/enums"
 	"github.com/F24-CSE535/2pc/cluster/pkg/models"
@@ -14,11 +15,27 @@ import (
 type DatabaseHandler struct {
 	client  *client.Client
 	logger  *zap.Logger
+	manager *lock.Manager
 	storage *storage.Database
 }
 
 // Request accepts a transaction message and performs the needed logic to execute it (intr-shard).
 func (d DatabaseHandler) Request(ra string, trx *database.TransactionMsg) {
+	// get sessionId
+	sessionId := int(trx.GetSessionId())
+
+	// release the locks
+	defer func() {
+		d.manager.Unlock(trx.GetSender(), sessionId)
+		d.manager.Unlock(trx.GetReceiver(), sessionId)
+	}()
+
+	// check the lock before request
+	if !d.manager.Lock(trx.GetSender(), sessionId) || !d.manager.Lock(trx.GetReceiver(), sessionId) {
+		d.logger.Warn("failed to capture locks", zap.Int("session id", sessionId))
+		return
+	}
+
 	// get the sender balance
 	balance, err := d.storage.GetClientBalance(trx.GetSender())
 	if err != nil {
@@ -65,6 +82,16 @@ func (d DatabaseHandler) Request(ra string, trx *database.TransactionMsg) {
 func (d DatabaseHandler) Prepare(msg *database.PrepareMsg) {
 	// get sessionId
 	sessionId := int(msg.Transaction.GetSessionId())
+
+	// check the lock before request
+	if !d.manager.Lock(msg.GetClient(), sessionId) {
+		d.logger.Warn("failed to capture locks", zap.Int("session id", sessionId))
+
+		// release the locks if one captured
+		d.manager.Unlock(msg.GetClient(), sessionId)
+
+		return
+	}
 
 	// create a list of WALs
 	wals := make([]*models.Log, 0)
@@ -122,6 +149,10 @@ func (d DatabaseHandler) Commit(msg *database.CommitMsg) {
 
 	// update clients
 	for _, wal := range wals {
+		// release the locks if one captured
+		d.manager.Unlock(wal.Record, sessionId)
+
+		// update the client balance
 		if err := d.storage.UpdateClientBalance(wal.Record, wal.NewValue, false); err != nil {
 			d.logger.Warn("failed to update balance", zap.Error(err), zap.String("client", wal.Record))
 			return
@@ -145,6 +176,19 @@ func (d DatabaseHandler) Commit(msg *database.CommitMsg) {
 
 // Abort will log an abort log into the logs.
 func (d DatabaseHandler) Abort(sessionId int) {
+	// get all update logs
+	wals, err := d.storage.RetrieveWALs(sessionId)
+	if err != nil {
+		d.logger.Warn("failed to get logs", zap.Error(err))
+		return
+	}
+
+	// release the locks if one captured
+	for _, wal := range wals {
+		d.manager.Unlock(wal.Record, sessionId)
+	}
+
+	// insert a abort WAL
 	if err := d.storage.InsertWAL(&models.Log{
 		SessionId: sessionId,
 		Message:   "abort",

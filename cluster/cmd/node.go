@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/F24-CSE535/2pc/cluster/internal/csm"
 	"github.com/F24-CSE535/2pc/cluster/internal/grpc"
+	"github.com/F24-CSE535/2pc/cluster/internal/lock"
 	"github.com/F24-CSE535/2pc/cluster/internal/storage"
 
 	"go.uber.org/zap"
@@ -19,7 +20,8 @@ func (n node) main(port int) {
 	go func() {
 		// create a new CSM manager
 		manager := csm.Manager{
-			Storage: n.database,
+			LockManager: lock.NewManager(),
+			Storage:     n.database,
 		}
 
 		// initialize CSMs with desired replica

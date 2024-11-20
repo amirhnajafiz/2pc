@@ -3,6 +3,7 @@ package csm
 import (
 	"github.com/F24-CSE535/2pc/cluster/internal/csm/handlers"
 	"github.com/F24-CSE535/2pc/cluster/internal/grpc/client"
+	"github.com/F24-CSE535/2pc/cluster/internal/lock"
 	"github.com/F24-CSE535/2pc/cluster/internal/storage"
 	"github.com/F24-CSE535/2pc/cluster/pkg/packets"
 
@@ -11,8 +12,9 @@ import (
 
 // Manager is responsible for fully creating consensus state machines.
 type Manager struct {
-	Storage *storage.Database
-	Channel chan *packets.Packet
+	LockManager *lock.Manager
+	Storage     *storage.Database
+	Channel     chan *packets.Packet
 }
 
 // Initialize accepts a number as the number of processing units, then it starts CSMs.
@@ -23,7 +25,7 @@ func (m *Manager) Initialize(logr *zap.Logger, replicas int) {
 	for i := 0; i < replicas; i++ {
 		// create a new CSM
 		csm := ConsensusStateMachine{
-			databaseHandler: handlers.NewDatabaseHandler(m.Storage, logr.Named("csm-handler"), client.NewClient("csm")),
+			databaseHandler: handlers.NewDatabaseHandler(m.Storage, logr.Named("csm-handler"), client.NewClient("csm"), m.LockManager),
 			channel:         m.Channel,
 		}
 
