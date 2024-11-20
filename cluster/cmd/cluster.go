@@ -33,7 +33,7 @@ func (c *Cluster) Main() error {
 	c.ports = c.cfg.Subnet
 
 	// create a new file logger for our nodes
-	logr := logger.NewFileLogger(c.cfg.LogLevel)
+	logr := logger.NewFileLogger(c.cfg.LogLevel, c.Index)
 
 	// open global database connection
 	db, err := storage.NewClusterDatabase(c.cfg.MongoDB, c.cfg.Database, c.ClusterName)

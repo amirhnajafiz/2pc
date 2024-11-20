@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -9,7 +10,7 @@ import (
 )
 
 // NewFileLogger creates a zap logger for file.
-func NewFileLogger(level string) *zap.Logger {
+func NewFileLogger(level string, prefix int) *zap.Logger {
 	var lvl zapcore.Level
 
 	if err := lvl.Set(level); err != nil {
@@ -18,11 +19,13 @@ func NewFileLogger(level string) *zap.Logger {
 		lvl = zapcore.WarnLevel
 	}
 
-	if err := os.Truncate("logs.csv", 0); err != nil {
+	name := fmt.Sprintf("logs%d.csv", prefix)
+
+	if err := os.Truncate(name, 0); err != nil {
 		panic(err)
 	}
 
-	file, err := os.OpenFile("logs.csv", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		panic(err)
 	}
