@@ -1,7 +1,7 @@
 package manager
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/F24-CSE535/2pc/client/pkg/rpc/database"
 )
@@ -21,16 +21,28 @@ func (m *Manager) handleAck(msg *database.AckMsg) {
 		session.Acks = append(session.Acks, msg)
 
 		// check for the number of acks
-		if len(session.Acks) == session.Participants {
+		if len(session.Acks) == len(session.Participants) {
 			// if any is aborted, then abort all
 			for _, item := range session.Acks {
 				if item.IsAborted {
-					fmt.Println("aborted")
+					log.Printf("transaction %d is aborted.\n", session.Id)
+
+					for _, address := range session.Participants {
+						if err := m.dialer.Abort(address, session.Id); err != nil {
+							log.Printf("failed to send abort message: %v\n", err)
+						}
+					}
+
+					return
 				}
 			}
 
 			// if all are committed, then commit all
-			fmt.Println("send commit")
+			for _, address := range session.Participants {
+				if err := m.dialer.Commit(address, session.Id); err != nil {
+					log.Printf("failed to send commit message: %v\n", err)
+				}
+			}
 		}
 	}
 }

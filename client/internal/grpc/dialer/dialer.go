@@ -55,7 +55,7 @@ func (d *Dialer) Request(target, sender, receiver string, amount, sessionId int)
 }
 
 // Request accepts a transaction parameters for a cross-shard transaction.
-func (d *Dialer) Prepare(target, sender, receiver string, amount, sessionId int) error {
+func (d *Dialer) Prepare(target, client, sender, receiver string, amount, sessionId int) error {
 	// base connection
 	conn, err := d.connect(target)
 	if err != nil {
@@ -71,6 +71,7 @@ func (d *Dialer) Prepare(target, sender, receiver string, amount, sessionId int)
 			Amount:    int64(amount),
 			SessionId: int64(sessionId),
 		},
+		Client:        client,               // set the client for cluster usage
 		ReturnAddress: d.Nodes["client"][0], // set the return address
 	}); err != nil {
 		return err

@@ -7,6 +7,6 @@ type Session struct {
 	Type         string
 	Text         string
 	Id           int
-	Participants int
+	Participants []string
 	Acks         []*database.AckMsg
 }
