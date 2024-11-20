@@ -3,11 +3,13 @@ package grpc
 import (
 	"context"
 	"fmt"
+	"io"
 
 	"github.com/F24-CSE535/2pc/client/pkg/rpc/database"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // Dialer is a module for making RPC calls from client to clusters.
@@ -136,4 +138,72 @@ func (d *Dialer) PrintBalance(target string, client string) (int, error) {
 	}
 
 	return int(resp.GetBalance()), nil
+}
+
+// PrintLogs accepts a target and calls PrintLogs RPC on the target.
+func (d *Dialer) PrintLogs(target string) ([]string, error) {
+	// base connection
+	conn, err := d.connect(target)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+
+	// open a stream on PrintLogs to get blocks
+	stream, err := database.NewDatabaseClient(conn).PrintLogs(context.Background(), &emptypb.Empty{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to process printlogs: %v", err)
+	}
+
+	// create a list to store logs
+	list := make([]string, 0)
+
+	for {
+		// read logs one by one
+		in, err := stream.Recv()
+		if err != nil {
+			if err == io.EOF { // send a response once the stream is closed
+				return list, nil
+			}
+
+			return nil, fmt.Errorf("failed to receive log: %v", err)
+		}
+
+		// append to the list of blocks
+		list = append(list, in.String())
+	}
+}
+
+// PrintDatastore accepts a target and calls PrintDatastore RPC on the target.
+func (d *Dialer) PrintDatastore(target string) ([]int, error) {
+	// base connection
+	conn, err := d.connect(target)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+
+	// open a stream on PrintDatastore to get blocks
+	stream, err := database.NewDatabaseClient(conn).PrintDatastore(context.Background(), &emptypb.Empty{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to process printdatastore: %v", err)
+	}
+
+	// create a list to store datastore
+	list := make([]int, 0)
+
+	for {
+		// read logs one by one
+		in, err := stream.Recv()
+		if err != nil {
+			if err == io.EOF { // send a response once the stream is closed
+				return list, nil
+			}
+
+			return nil, fmt.Errorf("failed to receive datastore: %v", err)
+		}
+
+		// append to the list of blocks
+		list = append(list, int(in.GetSessionId()))
+	}
 }
