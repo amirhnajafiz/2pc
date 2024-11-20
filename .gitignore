@@ -3,6 +3,7 @@ vendor/
 main
 main~
 logs.csv
+logs*.csv
 
 # app directoires
 tests/
