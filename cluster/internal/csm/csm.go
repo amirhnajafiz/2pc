@@ -4,6 +4,7 @@ import (
 	"github.com/F24-CSE535/2pc/cluster/internal/csm/handlers"
 	"github.com/F24-CSE535/2pc/cluster/pkg/packets"
 	"github.com/F24-CSE535/2pc/cluster/pkg/rpc/database"
+	"github.com/F24-CSE535/2pc/cluster/pkg/rpc/paxos"
 )
 
 // ConsensusStateMachine is a processing unit that captures packets from gRPC level and passes them to handlers.
@@ -31,11 +32,11 @@ func (c *ConsensusStateMachine) Start() {
 		case packets.PktAbort:
 			c.databaseHandler.Abort(int(pkt.Payload.(*database.AbortMsg).GetSessionId()))
 		case packets.PktPaxosAccept:
-			c.paxosHandler.Accept()
+			c.paxosHandler.Accept(pkt.Payload.(*paxos.AcceptMsg))
 		case packets.PktPaxosAccepted:
-			c.paxosHandler.Accepted()
+			c.paxosHandler.Accepted(pkt.Payload.(*paxos.AcceptedMsg))
 		case packets.PktPaxosCommit:
-			c.paxosHandler.Commit()
+			c.paxosHandler.Commit(pkt.Payload.(*paxos.CommitMsg))
 		}
 	}
 }
