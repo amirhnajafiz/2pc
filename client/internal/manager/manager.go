@@ -2,6 +2,7 @@ package manager
 
 import (
 	grpc "github.com/F24-CSE535/2pc/client/internal/grpc/dialer"
+	"github.com/F24-CSE535/2pc/client/internal/memory"
 	"github.com/F24-CSE535/2pc/client/internal/storage"
 	"github.com/F24-CSE535/2pc/client/pkg/models"
 	"github.com/F24-CSE535/2pc/client/pkg/rpc/database"
@@ -10,6 +11,7 @@ import (
 // Manager is a struct that handles client input commands.
 type Manager struct {
 	dialer  *grpc.Dialer
+	memory  *memory.Memory
 	storage *storage.Database
 
 	channel chan *models.Packet
@@ -27,6 +29,7 @@ func NewManager(dialer *grpc.Dialer, storage *storage.Database) *Manager {
 	instance := Manager{
 		dialer:     dialer,
 		storage:    storage,
+		memory:     memory.NewMemory(),
 		channel:    make(chan *models.Packet),
 		output:     make(chan *models.Session),
 		cache:      make(map[int]*models.Session),

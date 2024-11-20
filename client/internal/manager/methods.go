@@ -42,7 +42,7 @@ func (m *Manager) Transaction(argc int, argv []string) string {
 	sender := argv[0]
 	receiver := argv[1]
 	amount, _ := strconv.Atoi(argv[2])
-	sessionId := 0
+	sessionId := m.memory.GetSession()
 
 	// get shards
 	senderCluster, err := m.storage.GetClientShard(sender)
