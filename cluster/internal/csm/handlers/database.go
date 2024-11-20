@@ -168,6 +168,11 @@ func (d DatabaseHandler) Commit(msg *database.CommitMsg) {
 		return
 	}
 
+	d.logger.Debug(
+		"transaction submitted",
+		zap.Int("session id", sessionId),
+	)
+
 	// call the reply RPC on client
 	if err := d.client.Reply(msg.GetReturnAddress(), enums.RespOK, sessionId); err != nil {
 		d.logger.Warn("failed to call reply", zap.String("client address", msg.GetReturnAddress()))
