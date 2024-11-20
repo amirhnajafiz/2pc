@@ -19,9 +19,30 @@ type DatabaseService struct {
 	Channel chan *packets.Packet
 }
 
-// Request RPC sends a new packet to CSMs.
+// Request RPC sends a new request packet to CSMs.
 func (d *DatabaseService) Request(_ context.Context, msg *database.RequestMsg) (*emptypb.Empty, error) {
 	d.Channel <- &packets.Packet{Label: packets.PktRequest, Payload: msg}
+
+	return &emptypb.Empty{}, nil
+}
+
+// Prepare RPC sends a new prepare packet to CSMs.
+func (d *DatabaseService) Prepare(_ context.Context, msg *database.PrepareMsg) (*emptypb.Empty, error) {
+	d.Channel <- &packets.Packet{Label: packets.PktPrepare, Payload: msg}
+
+	return &emptypb.Empty{}, nil
+}
+
+// Commit RPC sends a new commit packet to CSMs.
+func (d *DatabaseService) Commit(_ context.Context, msg *database.CommitMsg) (*emptypb.Empty, error) {
+	d.Channel <- &packets.Packet{Label: packets.PktCommit, Payload: msg}
+
+	return &emptypb.Empty{}, nil
+}
+
+// Abort RPC sends a new abort packet to CSMs.
+func (d *DatabaseService) Abort(_ context.Context, msg *database.AbortMsg) (*emptypb.Empty, error) {
+	d.Channel <- &packets.Packet{Label: packets.PktAbort, Payload: msg}
 
 	return &emptypb.Empty{}, nil
 }
