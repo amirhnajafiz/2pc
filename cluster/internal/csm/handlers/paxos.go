@@ -12,11 +12,31 @@ type PaxosHandler struct {
 	client *client.Client
 	logger *zap.Logger
 
-	acceptedNum *paxos.BallotNumber
-	acceptedVal *paxos.AcceptMsg
+	outputChannel chan bool
+
+	acceptedNum  *paxos.BallotNumber
+	acceptedVal  *paxos.AcceptMsg
+	acceptedMsgs []*paxos.AcceptedMsg
 }
 
-// Accept get's a new accept message and updates it's datastore and returns an accepted message.
+// GetOutputChannel returns the paxos handler ourput channel.
+func (p *PaxosHandler) GetOutputChannel() chan bool {
+	return p.outputChannel
+}
+
+// InitConsensus starts the consensus protocol.
+func (p *PaxosHandler) InitConsensus() {
+	p.outputChannel = make(chan bool)
+	p.acceptedMsgs = make([]*paxos.AcceptedMsg, 0)
+}
+
+// EndConsensus ends the consensus protocol.
+func (p *PaxosHandler) EndConsensus() {
+	p.outputChannel = nil
+	p.acceptedMsgs = nil
+}
+
+// Accept gets a new accept message and updates it's datastore and returns an accepted message.
 func (p *PaxosHandler) Accept(msg *paxos.AcceptMsg) {
 	// update accepted number and accepted value
 	p.acceptedNum = msg.GetBallotNumber()
@@ -28,10 +48,23 @@ func (p *PaxosHandler) Accept(msg *paxos.AcceptMsg) {
 	}
 }
 
+// Accepted gets a new accepted message and follows the paxos protocol.
 func (p *PaxosHandler) Accepted(msg *paxos.AcceptedMsg) {
+	// check the consensus is on going
+	if p.outputChannel == nil {
+		return
+	}
 
+	// store the accepted message
+	p.acceptedMsgs = append(p.acceptedMsgs, msg)
+
+	// count the messages
+	if len(p.acceptedMsgs) == 2 {
+		p.outputChannel <- true
+	}
 }
 
+// Commit gets a commit message and creates a new request into the system.
 func (p *PaxosHandler) Commit(msg *paxos.CommitMsg) {
 
 }
