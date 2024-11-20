@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 
+	"github.com/F24-CSE535/2pc/cluster/pkg/enums"
 	"github.com/F24-CSE535/2pc/cluster/pkg/models"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -94,7 +95,7 @@ func (d *Database) RetrieveWALs(sessionId int) ([]*models.Log, error) {
 	// create a filter for the specified cluster
 	filter := bson.M{
 		"session_id": sessionId,
-		"message":    "update",
+		"message":    enums.WALUpdate,
 	}
 
 	// find all documents that match the filter

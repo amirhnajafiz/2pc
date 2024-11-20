@@ -95,7 +95,7 @@ func (d DatabaseHandler) Prepare(msg *database.PrepareMsg) {
 
 	// create a list of WALs
 	wals := make([]*models.Log, 0)
-	wals = append(wals, &models.Log{SessionId: sessionId, Message: "start"})
+	wals = append(wals, &models.Log{SessionId: sessionId, Message: enums.WALStart})
 
 	// abort flag
 	abort := false
@@ -110,7 +110,12 @@ func (d DatabaseHandler) Prepare(msg *database.PrepareMsg) {
 		}
 
 		// add a log
-		wals = append(wals, &models.Log{SessionId: sessionId, Message: "update", Record: msg.GetTransaction().GetSender(), NewValue: -1 * int(msg.GetTransaction().GetAmount())})
+		wals = append(wals, &models.Log{
+			SessionId: sessionId,
+			Message:   enums.WALUpdate,
+			Record:    msg.GetTransaction().GetSender(),
+			NewValue:  -1 * int(msg.GetTransaction().GetAmount())},
+		)
 
 		// check if the balance is enough
 		if msg.GetTransaction().GetAmount() > int64(balance) {
@@ -119,7 +124,12 @@ func (d DatabaseHandler) Prepare(msg *database.PrepareMsg) {
 		}
 	} else {
 		// add a log
-		wals = append(wals, &models.Log{SessionId: sessionId, Message: "update", Record: msg.GetTransaction().GetReceiver(), NewValue: int(msg.GetTransaction().GetAmount())})
+		wals = append(wals, &models.Log{
+			SessionId: sessionId,
+			Message:   enums.WALUpdate,
+			Record:    msg.GetTransaction().GetReceiver(),
+			NewValue:  int(msg.GetTransaction().GetAmount())},
+		)
 	}
 
 	// store the logs
@@ -162,7 +172,7 @@ func (d DatabaseHandler) Commit(msg *database.CommitMsg) {
 	// store a commit log
 	if err := d.storage.InsertWAL(&models.Log{
 		SessionId: sessionId,
-		Message:   "commit",
+		Message:   enums.WALCommit,
 	}); err != nil {
 		d.logger.Warn("failed to store log", zap.Error(err))
 		return
@@ -196,7 +206,7 @@ func (d DatabaseHandler) Abort(sessionId int) {
 	// insert a abort WAL
 	if err := d.storage.InsertWAL(&models.Log{
 		SessionId: sessionId,
-		Message:   "abort",
+		Message:   enums.WALAbort,
 	}); err != nil {
 		d.logger.Warn("failed to store log", zap.Error(err))
 	}
