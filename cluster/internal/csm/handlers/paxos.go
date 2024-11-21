@@ -12,14 +12,9 @@ import (
 
 // PaxosHandler contains methods to perform paxos consensus protocol logic.
 type PaxosHandler struct {
-	client *client.Client
-	logger *zap.Logger
-	memory *memory.SharedMemory
-
-	nodeName string
-	nodes    []string
-	iptable  map[string]string
-
+	client  *client.Client
+	logger  *zap.Logger
+	memory  *memory.SharedMemory
 	channel chan *packets.Packet
 
 	acceptedNum  *paxos.BallotNumber
@@ -39,12 +34,12 @@ func (p *PaxosHandler) Request(req *database.RequestMsg) {
 	msg := paxos.AcceptMsg{
 		Request:      databaseRequestToPaxosRequest(req),
 		BallotNumber: p.acceptedNum,
-		NodeId:       p.nodeName,
+		NodeId:       p.memory.GetNodeName(),
 		CrossShard:   false,
 	}
 
 	// send accept messages
-	for _, address := range p.nodes {
+	for _, address := range p.memory.GetClusterIPs() {
 		if err := p.client.Accept(address, &msg); err != nil {
 			p.logger.Warn("failed to send accept message", zap.Error(err))
 		}
@@ -66,12 +61,12 @@ func (p *PaxosHandler) Prepare(req *database.PrepareMsg) {
 	msg := paxos.AcceptMsg{
 		Request:      databasePrepareToPaxosRequest(req),
 		BallotNumber: p.acceptedNum,
-		NodeId:       p.nodeName,
+		NodeId:       p.memory.GetNodeName(),
 		CrossShard:   true,
 	}
 
 	// send accept messages
-	for _, address := range p.nodes {
+	for _, address := range p.memory.GetClusterIPs() {
 		if err := p.client.Accept(address, &msg); err != nil {
 			p.logger.Warn("failed to send accept message", zap.Error(err))
 		}
@@ -88,7 +83,7 @@ func (p *PaxosHandler) Accept(msg *paxos.AcceptMsg) {
 	p.acceptedVal = msg
 
 	// send accepted message
-	if err := p.client.Accepted(p.iptable[msg.GetNodeId()], p.acceptedNum, p.acceptedVal); err != nil {
+	if err := p.client.Accepted(p.memory.GetFromIPTable(msg.GetNodeId()), p.acceptedNum, p.acceptedVal); err != nil {
 		p.logger.Warn("failed to send accepted message", zap.String("to", msg.GetNodeId()))
 	}
 }
@@ -105,7 +100,7 @@ func (p *PaxosHandler) Accepted(msg *paxos.AcceptedMsg) {
 
 	// count the messages, if we got the majority send commit messages
 	if len(p.acceptedMsgs) == 1 {
-		for _, address := range p.nodes {
+		for _, address := range p.memory.GetClusterIPs() {
 			if err := p.client.Commit(address, p.acceptedNum, p.acceptedVal); err != nil {
 				p.logger.Warn("failed to send commit message")
 			}

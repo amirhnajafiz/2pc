@@ -21,12 +21,9 @@ func (n node) main(port int, leader, name, cluster string, iptable map[string]st
 	go func() {
 		// create a new CSM manager
 		manager := csm.Manager{
-			NodeName:    name,
-			ClusterName: cluster,
-			IPTable:     iptable,
 			LockManager: lock.NewManager(),
 			Storage:     n.database,
-			Memory:      memory.NewSharedMemory(name, leader),
+			Memory:      memory.NewSharedMemory(leader, name, cluster, iptable),
 		}
 
 		// initialize CSMs with desired replica
