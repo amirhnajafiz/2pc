@@ -35,6 +35,8 @@ func NewPaxosHandler(
 		client:      client,
 		acceptedNum: &paxos.BallotNumber{Sequence: 0, NodeId: nodeName},
 		acceptedVal: nil,
+		nodeName:    nodeName,
 		nodes:       nodes,
+		iptable:     iptable,
 	}
 }

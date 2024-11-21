@@ -44,7 +44,7 @@ func (p *PaxosHandler) Request(req *database.RequestMsg) {
 	// send accept messages
 	for _, address := range p.nodes {
 		if err := p.client.Accept(address, &msg); err != nil {
-			p.logger.Warn("failed to send accept message")
+			p.logger.Warn("failed to send accept message", zap.Error(err))
 		}
 	}
 
@@ -71,7 +71,7 @@ func (p *PaxosHandler) Prepare(req *database.PrepareMsg) {
 	// send accept messages
 	for _, address := range p.nodes {
 		if err := p.client.Accept(address, &msg); err != nil {
-			p.logger.Warn("failed to send accept message")
+			p.logger.Warn("failed to send accept message", zap.Error(err))
 		}
 	}
 
