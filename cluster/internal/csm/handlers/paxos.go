@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/F24-CSE535/2pc/cluster/internal/grpc/client"
+	"github.com/F24-CSE535/2pc/cluster/internal/memory"
 	"github.com/F24-CSE535/2pc/cluster/pkg/packets"
 	"github.com/F24-CSE535/2pc/cluster/pkg/rpc/database"
 	"github.com/F24-CSE535/2pc/cluster/pkg/rpc/paxos"
@@ -13,6 +14,7 @@ import (
 type PaxosHandler struct {
 	client *client.Client
 	logger *zap.Logger
+	memory *memory.SharedMemory
 
 	nodeName string
 	nodes    []string

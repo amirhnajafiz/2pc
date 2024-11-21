@@ -105,6 +105,12 @@ func (c *Cluster) Main() error {
 func (c *Cluster) scaleUp(loger *zap.Logger) error {
 	name := fmt.Sprintf("S%d", c.Index+len(c.nodes))
 
+	// select the first node as init leader
+	leader := name
+	if len(c.nodes) > 0 {
+		leader = fmt.Sprintf("S%d", c.Index)
+	}
+
 	// open the new node database
 	db, err := storage.NewNodeDatabase(c.cfg.MongoDB, c.ClusterName, name)
 	if err != nil {
@@ -140,7 +146,7 @@ func (c *Cluster) scaleUp(loger *zap.Logger) error {
 	c.ports++
 
 	// start the node
-	go n.main(port, name, c.ClusterName, c.iptable)
+	go n.main(port, leader, name, c.ClusterName, c.iptable)
 
 	// increase the wait-group
 	c.wg.Add(1)

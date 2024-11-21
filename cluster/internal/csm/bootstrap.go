@@ -7,6 +7,7 @@ import (
 	"github.com/F24-CSE535/2pc/cluster/internal/csm/handlers"
 	"github.com/F24-CSE535/2pc/cluster/internal/grpc/client"
 	"github.com/F24-CSE535/2pc/cluster/internal/lock"
+	"github.com/F24-CSE535/2pc/cluster/internal/memory"
 	"github.com/F24-CSE535/2pc/cluster/internal/storage"
 	"github.com/F24-CSE535/2pc/cluster/pkg/packets"
 
@@ -20,6 +21,7 @@ type Manager struct {
 	IPTable     map[string]string
 
 	LockManager *lock.Manager
+	Memory      *memory.SharedMemory
 	Storage     *storage.Database
 	Channel     chan *packets.Packet
 }
@@ -32,10 +34,16 @@ func (m *Manager) Initialize(logr *zap.Logger, replicas int) {
 	for i := 0; i < replicas; i++ {
 		// create a new CSM
 		csm := ConsensusStateMachine{
-			databaseHandler: handlers.NewDatabaseHandler(m.Storage, logr.Named("csm-db-handler"), client.NewClient(m.NodeName), m.LockManager),
+			databaseHandler: handlers.NewDatabaseHandler(
+				m.Storage,
+				m.Memory,
+				logr.Named("csm-db-handler"),
+				client.NewClient(m.NodeName), m.LockManager,
+			),
 			paxosHandler: handlers.NewPaxosHandler(
 				m.Channel, logr.Named("csm-paxos-handler"),
 				client.NewClient(m.NodeName),
+				m.Memory,
 				m.NodeName,
 				getClusterIPs(m.NodeName, m.ClusterName, m.IPTable),
 				m.IPTable,

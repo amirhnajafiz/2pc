@@ -4,6 +4,7 @@ import (
 	"github.com/F24-CSE535/2pc/cluster/internal/csm"
 	"github.com/F24-CSE535/2pc/cluster/internal/grpc"
 	"github.com/F24-CSE535/2pc/cluster/internal/lock"
+	"github.com/F24-CSE535/2pc/cluster/internal/memory"
 	"github.com/F24-CSE535/2pc/cluster/internal/storage"
 
 	"go.uber.org/zap"
@@ -16,7 +17,7 @@ type node struct {
 	terminationChannel chan bool
 }
 
-func (n node) main(port int, name, cluster string, iptable map[string]string) {
+func (n node) main(port int, leader, name, cluster string, iptable map[string]string) {
 	go func() {
 		// create a new CSM manager
 		manager := csm.Manager{
@@ -25,6 +26,7 @@ func (n node) main(port int, name, cluster string, iptable map[string]string) {
 			IPTable:     iptable,
 			LockManager: lock.NewManager(),
 			Storage:     n.database,
+			Memory:      memory.NewSharedMemory(leader),
 		}
 
 		// initialize CSMs with desired replica

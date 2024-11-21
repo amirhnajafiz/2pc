@@ -3,6 +3,7 @@ package handlers
 import (
 	"github.com/F24-CSE535/2pc/cluster/internal/grpc/client"
 	"github.com/F24-CSE535/2pc/cluster/internal/lock"
+	"github.com/F24-CSE535/2pc/cluster/internal/memory"
 	"github.com/F24-CSE535/2pc/cluster/internal/storage"
 	"github.com/F24-CSE535/2pc/cluster/pkg/enums"
 	"github.com/F24-CSE535/2pc/cluster/pkg/models"
@@ -16,6 +17,7 @@ type DatabaseHandler struct {
 	client  *client.Client
 	logger  *zap.Logger
 	manager *lock.Manager
+	memory  *memory.SharedMemory
 	storage *storage.Database
 }
 
