@@ -31,6 +31,10 @@ func (c *ConsensusStateMachine) Start() {
 			c.databaseHandler.Commit(pkt.Payload.(*database.CommitMsg))
 		case packets.PktDatabaseAbort:
 			c.databaseHandler.Abort(int(pkt.Payload.(*database.AbortMsg).GetSessionId()))
+		case packets.PktPaxosRequest:
+			c.paxosHandler.Request(pkt.Payload.(*database.RequestMsg))
+		case packets.PktPaxosPrepare:
+			c.paxosHandler.Prepare(pkt.Payload.(*database.PrepareMsg))
 		case packets.PktPaxosAccept:
 			c.paxosHandler.Accept(pkt.Payload.(*paxos.AcceptMsg))
 		case packets.PktPaxosAccepted:

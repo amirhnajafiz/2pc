@@ -24,7 +24,7 @@ type Manager struct {
 // Initialize accepts a number as the number of processing units, then it starts CSMs.
 func (m *Manager) Initialize(logr *zap.Logger, replicas int) {
 	// the manager input channel
-	m.Channel = make(chan *packets.Packet)
+	m.Channel = make(chan *packets.Packet, 10)
 
 	for i := 0; i < replicas; i++ {
 		// create a new CSM

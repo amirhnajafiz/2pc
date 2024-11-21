@@ -10,6 +10,7 @@ const (
 
 const (
 	PktPaxosRequest int = iota + 100
+	PktPaxosPrepare
 	PktPaxosAccept
 	PktPaxosAccepted
 	PktPaxosCommit

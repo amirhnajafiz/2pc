@@ -21,14 +21,14 @@ type DatabaseService struct {
 
 // Request RPC sends a new request packet to CSMs.
 func (d *DatabaseService) Request(_ context.Context, msg *database.RequestMsg) (*emptypb.Empty, error) {
-	d.Channel <- &packets.Packet{Label: packets.PktDatabaseRequest, Payload: msg}
+	d.Channel <- &packets.Packet{Label: packets.PktPaxosRequest, Payload: msg}
 
 	return &emptypb.Empty{}, nil
 }
 
 // Prepare RPC sends a new prepare packet to CSMs.
 func (d *DatabaseService) Prepare(_ context.Context, msg *database.PrepareMsg) (*emptypb.Empty, error) {
-	d.Channel <- &packets.Packet{Label: packets.PktDatabasePrepare, Payload: msg}
+	d.Channel <- &packets.Packet{Label: packets.PktPaxosPrepare, Payload: msg}
 
 	return &emptypb.Empty{}, nil
 }
