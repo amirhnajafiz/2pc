@@ -16,11 +16,13 @@ type node struct {
 	terminationChannel chan bool
 }
 
-func (n node) main(port int, name string) {
+func (n node) main(port int, name, cluster string, iptable map[string]string) {
 	go func() {
 		// create a new CSM manager
 		manager := csm.Manager{
 			NodeName:    name,
+			ClusterName: cluster,
+			IPTable:     iptable,
 			LockManager: lock.NewManager(),
 			Storage:     n.database,
 		}

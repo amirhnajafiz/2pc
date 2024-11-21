@@ -8,6 +8,7 @@ import (
 
 	"github.com/F24-CSE535/2pc/cluster/internal/config"
 	"github.com/F24-CSE535/2pc/cluster/internal/storage"
+	"github.com/F24-CSE535/2pc/cluster/internal/utils"
 	"github.com/F24-CSE535/2pc/cluster/pkg/logger"
 
 	"go.uber.org/zap"
@@ -17,7 +18,10 @@ import (
 type Cluster struct {
 	ConfigPath  string
 	ClusterName string
+	IPTablePath string
 	Index       int
+
+	iptable map[string]string
 
 	cfg      config.Config
 	database *storage.Database
@@ -31,6 +35,13 @@ func (c *Cluster) Main() error {
 	// load cluster configs
 	c.cfg = config.New(c.ConfigPath)
 	c.ports = c.cfg.Subnet
+
+	// load iptables
+	nodes, err := utils.IPTableParseFile(c.IPTablePath)
+	if err != nil {
+		return fmt.Errorf("failed to open iptables: %v", err)
+	}
+	c.iptable = nodes
 
 	// create a new file logger for our nodes
 	logr := logger.NewFileLogger(c.cfg.LogLevel, c.Index)
@@ -129,7 +140,7 @@ func (c *Cluster) scaleUp(loger *zap.Logger) error {
 	c.ports++
 
 	// start the node
-	go n.main(port, name)
+	go n.main(port, name, c.ClusterName, c.iptable)
 
 	// increase the wait-group
 	c.wg.Add(1)

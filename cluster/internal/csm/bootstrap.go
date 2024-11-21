@@ -13,6 +13,9 @@ import (
 // Manager is responsible for fully creating consensus state machines.
 type Manager struct {
 	NodeName    string
+	ClusterName string
+	IPTable     map[string]string
+
 	LockManager *lock.Manager
 	Storage     *storage.Database
 	Channel     chan *packets.Packet

@@ -9,14 +9,15 @@ import (
 
 func main() {
 	args := os.Args
-	if len(args) < 4 {
-		panic("at least four arguments are needed (./main <cluster-name> <config-path> <index>)")
+	if len(args) < 5 {
+		panic("at least four arguments are needed (./main <cluster-name> <config-path> <index> <iptable-path>)")
 	}
 
 	// create a new cluster manager
 	cm := cmd.Cluster{
 		ClusterName: args[1],
 		ConfigPath:  args[2],
+		IPTablePath: args[4],
 	}
 	cm.Index, _ = strconv.Atoi(args[3])
 
