@@ -76,9 +76,11 @@ func (d DatabaseHandler) Request(ra string, trx *database.TransactionMsg) {
 		)
 	}
 
-	// call the reply RPC on client
-	if err := d.client.Reply(ra, response, int(trx.GetSessionId())); err != nil {
-		d.logger.Warn("failed to call reply", zap.String("client address", ra))
+	// call the reply RPC on client, if the node is the leader
+	if d.memory.GetLeader() == d.memory.GetNodeName() {
+		if err := d.client.Reply(ra, response, int(trx.GetSessionId())); err != nil {
+			d.logger.Warn("failed to call reply", zap.String("client address", ra))
+		}
 	}
 }
 
@@ -142,10 +144,12 @@ func (d DatabaseHandler) Prepare(msg *database.PrepareMsg) {
 		return
 	}
 
-	// send the ack message
-	if err := d.client.Ack(msg.GetReturnAddress(), sessionId, abort); err != nil {
-		d.logger.Warn("failed to send ack message", zap.Error(err))
-		return
+	// send the ack message, if the node is leader
+	if d.memory.GetLeader() == d.memory.GetNodeName() {
+		if err := d.client.Ack(msg.GetReturnAddress(), sessionId, abort); err != nil {
+			d.logger.Warn("failed to send ack message", zap.Error(err))
+			return
+		}
 	}
 }
 
@@ -187,9 +191,11 @@ func (d DatabaseHandler) Commit(msg *database.CommitMsg) {
 		zap.Int("session id", sessionId),
 	)
 
-	// call the reply RPC on client
-	if err := d.client.Reply(msg.GetReturnAddress(), enums.RespOK, sessionId); err != nil {
-		d.logger.Warn("failed to call reply", zap.String("client address", msg.GetReturnAddress()))
+	// call the reply RPC on client, if the node is leader
+	if d.memory.GetLeader() == d.memory.GetNodeName() {
+		if err := d.client.Reply(msg.GetReturnAddress(), enums.RespOK, sessionId); err != nil {
+			d.logger.Warn("failed to call reply", zap.String("client address", msg.GetReturnAddress()))
+		}
 	}
 }
 

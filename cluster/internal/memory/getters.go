@@ -4,3 +4,8 @@ package memory
 func (s *SharedMemory) GetLeader() string {
 	return s.leader
 }
+
+// GetNodeName returns the current node.
+func (s *SharedMemory) GetNodeName() string {
+	return s.nodeName
+}

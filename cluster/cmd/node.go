@@ -26,7 +26,7 @@ func (n node) main(port int, leader, name, cluster string, iptable map[string]st
 			IPTable:     iptable,
 			LockManager: lock.NewManager(),
 			Storage:     n.database,
-			Memory:      memory.NewSharedMemory(leader),
+			Memory:      memory.NewSharedMemory(name, leader),
 		}
 
 		// initialize CSMs with desired replica
