@@ -9,9 +9,9 @@ import (
 
 // ConsensusStateMachine is a processing unit that captures packets from gRPC level and passes them to handlers.
 type ConsensusStateMachine struct {
+	channel         chan *packets.Packet
 	databaseHandler *handlers.DatabaseHandler
 	paxosHandler    *handlers.PaxosHandler
-	channel         chan *packets.Packet
 }
 
 // Start method waits on packets on the input channel, and performs a logic based on packet label.

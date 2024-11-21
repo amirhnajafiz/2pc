@@ -13,10 +13,9 @@ import (
 
 // Manager is responsible for fully creating consensus state machines.
 type Manager struct {
-	LockManager *lock.Manager
-	Memory      *memory.SharedMemory
-	Storage     *storage.Database
-	Channel     chan *packets.Packet
+	Channel chan *packets.Packet
+	Memory  *memory.SharedMemory
+	Storage *storage.Database
 }
 
 // Initialize accepts a number as the number of processing units, then it starts CSMs.
@@ -24,21 +23,29 @@ func (m *Manager) Initialize(logr *zap.Logger, replicas int) {
 	// the manager input channel
 	m.Channel = make(chan *packets.Packet, 10)
 
+	// create database handler
+	dbh := handlers.NewDatabaseHandler(
+		client.NewClient(m.Memory.GetNodeName()),
+		lock.NewManager(),
+		logr.Named("csm-db-handler"),
+		m.Memory,
+		m.Storage,
+	)
+
+	// create paxos handler
+	pxh := handlers.NewPaxosHandler(
+		m.Channel,
+		client.NewClient(m.Memory.GetNodeName()),
+		logr.Named("csm-paxos-handler"),
+		m.Memory,
+	)
+
 	for i := 0; i < replicas; i++ {
 		// create a new CSM
 		csm := ConsensusStateMachine{
-			databaseHandler: handlers.NewDatabaseHandler(
-				m.Storage,
-				m.Memory,
-				logr.Named("csm-db-handler"),
-				client.NewClient(m.Memory.GetNodeName()), m.LockManager,
-			),
-			paxosHandler: handlers.NewPaxosHandler(
-				m.Channel, logr.Named("csm-paxos-handler"),
-				client.NewClient(m.Memory.GetNodeName()),
-				m.Memory,
-			),
-			channel: m.Channel,
+			channel:         m.Channel,
+			databaseHandler: dbh,
+			paxosHandler:    pxh,
 		}
 
 		// start the CSM inside a go-routine

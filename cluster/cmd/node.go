@@ -3,7 +3,6 @@ package cmd
 import (
 	"github.com/F24-CSE535/2pc/cluster/internal/csm"
 	"github.com/F24-CSE535/2pc/cluster/internal/grpc"
-	"github.com/F24-CSE535/2pc/cluster/internal/lock"
 	"github.com/F24-CSE535/2pc/cluster/internal/memory"
 	"github.com/F24-CSE535/2pc/cluster/internal/storage"
 
@@ -25,9 +24,8 @@ func (n node) main(port int, name string) {
 	go func() {
 		// create a new CSM manager
 		manager := csm.Manager{
-			LockManager: lock.NewManager(),
-			Storage:     n.database,
-			Memory:      memory.NewSharedMemory(n.leader, name, n.cluster, n.iptable),
+			Storage: n.database,
+			Memory:  memory.NewSharedMemory(n.leader, name, n.cluster, n.iptable),
 		}
 
 		// initialize CSMs with desired replica

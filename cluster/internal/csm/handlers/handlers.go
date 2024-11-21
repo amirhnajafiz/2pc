@@ -13,11 +13,11 @@ import (
 
 // NewDatabaseHandler returns an instance of database handler.
 func NewDatabaseHandler(
-	st *storage.Database,
-	mem *memory.SharedMemory,
-	logr *zap.Logger,
 	client *client.Client,
 	lm *lock.Manager,
+	logr *zap.Logger,
+	mem *memory.SharedMemory,
+	st *storage.Database,
 ) *DatabaseHandler {
 	return &DatabaseHandler{
 		memory:  mem,
@@ -31,8 +31,8 @@ func NewDatabaseHandler(
 // NewPaxosHandler returns an instance paxos handler.
 func NewPaxosHandler(
 	channel chan *packets.Packet,
-	logr *zap.Logger,
 	client *client.Client,
+	logr *zap.Logger,
 	mem *memory.SharedMemory,
 ) *PaxosHandler {
 	return &PaxosHandler{
