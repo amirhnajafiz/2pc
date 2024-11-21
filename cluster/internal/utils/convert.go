@@ -1,11 +1,11 @@
-package handlers
+package utils
 
 import (
 	"github.com/F24-CSE535/2pc/cluster/pkg/rpc/database"
 	"github.com/F24-CSE535/2pc/cluster/pkg/rpc/paxos"
 )
 
-func databaseRequestToPaxosRequest(req *database.RequestMsg) *paxos.Request {
+func ConvertDatabaseRequestToPaxosRequest(req *database.RequestMsg) *paxos.Request {
 	return &paxos.Request{
 		Sender:        req.GetTransaction().GetSender(),
 		Receiver:      req.GetTransaction().GetReceiver(),
@@ -15,7 +15,7 @@ func databaseRequestToPaxosRequest(req *database.RequestMsg) *paxos.Request {
 	}
 }
 
-func databasePrepareToPaxosRequest(req *database.PrepareMsg) *paxos.Request {
+func ConvertDatabasePrepareToPaxosRequest(req *database.PrepareMsg) *paxos.Request {
 	return &paxos.Request{
 		Sender:        req.GetTransaction().GetSender(),
 		Receiver:      req.GetTransaction().GetReceiver(),
@@ -26,7 +26,7 @@ func databasePrepareToPaxosRequest(req *database.PrepareMsg) *paxos.Request {
 	}
 }
 
-func paxosRequestToDatabaseTransaction(req *paxos.Request) *database.TransactionMsg {
+func ConvertPaxosRequestToDatabaseTransaction(req *paxos.Request) *database.TransactionMsg {
 	return &database.TransactionMsg{
 		Sender:    req.GetSender(),
 		Receiver:  req.GetReceiver(),

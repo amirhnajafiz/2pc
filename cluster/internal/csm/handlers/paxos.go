@@ -3,6 +3,7 @@ package handlers
 import (
 	"github.com/F24-CSE535/2pc/cluster/internal/grpc/client"
 	"github.com/F24-CSE535/2pc/cluster/internal/memory"
+	"github.com/F24-CSE535/2pc/cluster/internal/utils"
 	"github.com/F24-CSE535/2pc/cluster/pkg/packets"
 	"github.com/F24-CSE535/2pc/cluster/pkg/rpc/database"
 	"github.com/F24-CSE535/2pc/cluster/pkg/rpc/paxos"
@@ -32,7 +33,7 @@ func (p *PaxosHandler) Request(req *database.RequestMsg) {
 
 	// create paxos request
 	msg := paxos.AcceptMsg{
-		Request:      databaseRequestToPaxosRequest(req),
+		Request:      utils.ConvertDatabaseRequestToPaxosRequest(req),
 		BallotNumber: p.acceptedNum,
 		NodeId:       p.memory.GetNodeName(),
 		CrossShard:   false,
@@ -59,7 +60,7 @@ func (p *PaxosHandler) Prepare(req *database.PrepareMsg) {
 
 	// create paxos request
 	msg := paxos.AcceptMsg{
-		Request:      databasePrepareToPaxosRequest(req),
+		Request:      utils.ConvertDatabasePrepareToPaxosRequest(req),
 		BallotNumber: p.acceptedNum,
 		NodeId:       p.memory.GetNodeName(),
 		CrossShard:   true,
@@ -116,14 +117,14 @@ func (p *PaxosHandler) Accepted(msg *paxos.AcceptedMsg) {
 	if p.acceptedVal.CrossShard {
 		pkt.Label = packets.PktDatabasePrepare
 		pkt.Payload = &database.PrepareMsg{
-			Transaction:   paxosRequestToDatabaseTransaction(p.acceptedVal.GetRequest()),
+			Transaction:   utils.ConvertPaxosRequestToDatabaseTransaction(p.acceptedVal.GetRequest()),
 			Client:        p.acceptedVal.Request.GetClient(),
 			ReturnAddress: p.acceptedVal.Request.GetReturnAddress(),
 		}
 	} else {
 		pkt.Label = packets.PktDatabaseRequest
 		pkt.Payload = &database.RequestMsg{
-			Transaction:   paxosRequestToDatabaseTransaction(p.acceptedVal.GetRequest()),
+			Transaction:   utils.ConvertPaxosRequestToDatabaseTransaction(p.acceptedVal.GetRequest()),
 			ReturnAddress: p.acceptedVal.Request.GetReturnAddress(),
 		}
 	}
@@ -140,14 +141,14 @@ func (p *PaxosHandler) Commit(msg *paxos.CommitMsg) {
 	if p.acceptedVal.CrossShard {
 		pkt.Label = packets.PktDatabasePrepare
 		pkt.Payload = &database.PrepareMsg{
-			Transaction:   paxosRequestToDatabaseTransaction(p.acceptedVal.GetRequest()),
+			Transaction:   utils.ConvertPaxosRequestToDatabaseTransaction(p.acceptedVal.GetRequest()),
 			Client:        p.acceptedVal.Request.GetClient(),
 			ReturnAddress: p.acceptedVal.Request.GetReturnAddress(),
 		}
 	} else {
 		pkt.Label = packets.PktDatabaseRequest
 		pkt.Payload = &database.RequestMsg{
-			Transaction:   paxosRequestToDatabaseTransaction(p.acceptedVal.GetRequest()),
+			Transaction:   utils.ConvertPaxosRequestToDatabaseTransaction(p.acceptedVal.GetRequest()),
 			ReturnAddress: p.acceptedVal.Request.GetReturnAddress(),
 		}
 	}
