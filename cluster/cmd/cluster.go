@@ -136,6 +136,9 @@ func (c *Cluster) scaleUp(loger *zap.Logger) error {
 		logger:             loger.Named(name),
 		database:           db,
 		terminationChannel: make(chan bool),
+		cluster:            c.ClusterName,
+		iptable:            c.iptable,
+		leader:             leader,
 	}
 
 	// set the node channel
@@ -146,7 +149,7 @@ func (c *Cluster) scaleUp(loger *zap.Logger) error {
 	c.ports++
 
 	// start the node
-	go n.main(port, leader, name, c.ClusterName, c.iptable)
+	go n.main(port, name)
 
 	// increase the wait-group
 	c.wg.Add(1)

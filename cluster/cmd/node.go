@@ -15,15 +15,19 @@ type node struct {
 	logger             *zap.Logger
 	database           *storage.Database
 	terminationChannel chan bool
+
+	iptable map[string]string
+	cluster string
+	leader  string
 }
 
-func (n node) main(port int, leader, name, cluster string, iptable map[string]string) {
+func (n node) main(port int, name string) {
 	go func() {
 		// create a new CSM manager
 		manager := csm.Manager{
 			LockManager: lock.NewManager(),
 			Storage:     n.database,
-			Memory:      memory.NewSharedMemory(leader, name, cluster, iptable),
+			Memory:      memory.NewSharedMemory(n.leader, name, n.cluster, n.iptable),
 		}
 
 		// initialize CSMs with desired replica
