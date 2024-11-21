@@ -101,18 +101,20 @@ func (p *PaxosHandler) Accepted(msg *paxos.AcceptedMsg) {
 	// store the accepted message
 	p.acceptedMsgs = append(p.acceptedMsgs, msg)
 
-	// count the messages, if we got the majority send commit messages
-	if len(p.acceptedMsgs) == 1 {
-		for _, address := range p.memory.GetClusterIPs() {
-			if err := p.client.Commit(address, p.acceptedNum, p.acceptedVal); err != nil {
-				p.logger.Warn("failed to send commit message")
-			}
-		}
-
-		p.acceptedMsgs = nil
-	} else {
+	// count the messages, if we got the majority
+	if len(p.acceptedMsgs) < 1 {
 		return
 	}
+
+	// send commit messages
+	for _, address := range p.memory.GetClusterIPs() {
+		if err := p.client.Commit(address, p.acceptedNum, p.acceptedVal); err != nil {
+			p.logger.Warn("failed to send commit message")
+		}
+	}
+
+	// reset all accepted messages
+	p.acceptedMsgs = nil
 
 	// send a new commit message to our own channel
 	pkt := packets.Packet{
@@ -123,6 +125,7 @@ func (p *PaxosHandler) Accepted(msg *paxos.AcceptedMsg) {
 		},
 	}
 
+	// send the commit to our own channel and notify the dispatcher
 	p.channel <- &pkt
 	p.notify <- true
 }
