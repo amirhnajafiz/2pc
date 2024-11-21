@@ -30,6 +30,8 @@ func (d DatabaseHandler) Request(ra string, trx *database.TransactionMsg) {
 		d.manager.Unlock(trx.GetReceiver(), sessionId)
 	}()
 
+	d.logger.Debug("input request", zap.String("req", trx.String()))
+
 	// check the lock before request
 	if !d.manager.Lock(trx.GetSender(), sessionId) || !d.manager.Lock(trx.GetReceiver(), sessionId) {
 		d.logger.Warn("failed to capture locks", zap.Int("session id", sessionId))

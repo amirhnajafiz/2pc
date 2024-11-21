@@ -29,7 +29,7 @@ func databasePrepareToPaxosRequest(req *database.PrepareMsg) *paxos.Request {
 func paxosRequestToDatabaseTransaction(req *paxos.Request) *database.TransactionMsg {
 	return &database.TransactionMsg{
 		Sender:    req.GetSender(),
-		Receiver:  req.GetSender(),
+		Receiver:  req.GetReceiver(),
 		Amount:    req.GetAmount(),
 		SessionId: req.GetSessionId(),
 	}
