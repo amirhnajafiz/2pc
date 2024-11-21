@@ -159,9 +159,11 @@ func (d DatabaseHandler) Commit(msg *database.CommitMsg) {
 	sessionId := int(msg.GetSessionId())
 
 	// forward the commit message to all other nodes
-	for _, address := range d.memory.GetClusterIPs() {
-		if err := d.client.DatabaseCommit(address, int(msg.GetSessionId())); err != nil {
-			d.logger.Warn("failed to forward commit message", zap.Error(err))
+	if d.memory.GetLeader() == d.memory.GetNodeName() {
+		for _, address := range d.memory.GetClusterIPs() {
+			if err := d.client.DatabaseCommit(address, int(msg.GetSessionId())); err != nil {
+				d.logger.Warn("failed to forward commit message", zap.Error(err))
+			}
 		}
 	}
 
@@ -209,9 +211,11 @@ func (d DatabaseHandler) Commit(msg *database.CommitMsg) {
 // Abort will log an abort log into the logs.
 func (d DatabaseHandler) Abort(sessionId int) {
 	// forward the abort message to all other nodes
-	for _, address := range d.memory.GetClusterIPs() {
-		if err := d.client.DatabaseAbort(address, sessionId); err != nil {
-			d.logger.Warn("failed to forward abort message", zap.Error(err))
+	if d.memory.GetLeader() == d.memory.GetNodeName() {
+		for _, address := range d.memory.GetClusterIPs() {
+			if err := d.client.DatabaseAbort(address, sessionId); err != nil {
+				d.logger.Warn("failed to forward abort message", zap.Error(err))
+			}
 		}
 	}
 
