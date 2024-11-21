@@ -1,9 +1,6 @@
 package handlers
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/F24-CSE535/2pc/cluster/internal/grpc/client"
 	"github.com/F24-CSE535/2pc/cluster/pkg/packets"
 	"github.com/F24-CSE535/2pc/cluster/pkg/rpc/database"
@@ -38,20 +35,14 @@ func (p *PaxosHandler) Request(req *database.RequestMsg) {
 
 	// create paxos request
 	msg := paxos.AcceptMsg{
-		Request: &paxos.Request{
-			Sender:        req.GetTransaction().GetSender(),
-			Receiver:      req.GetTransaction().GetReceiver(),
-			Amount:        req.GetTransaction().GetAmount(),
-			SessionId:     req.GetTransaction().GetSessionId(),
-			ReturnAddress: req.GetReturnAddress(),
-		},
+		Request:      databaseRequestToPaxosRequest(req),
 		BallotNumber: p.acceptedNum,
 		NodeId:       p.nodeName,
 		CrossShard:   false,
 	}
 
 	// send accept messages
-	for _, address := range p.getClusterIPs() {
+	for _, address := range getClusterIPs(p.nodeName, p.clusterName, p.iptable) {
 		if err := p.client.Accept(address, &msg); err != nil {
 			p.logger.Warn("failed to send accept message")
 		}
@@ -71,21 +62,14 @@ func (p *PaxosHandler) Prepare(req *database.PrepareMsg) {
 
 	// create paxos request
 	msg := paxos.AcceptMsg{
-		Request: &paxos.Request{
-			Sender:        req.GetTransaction().GetSender(),
-			Receiver:      req.GetTransaction().GetReceiver(),
-			Amount:        req.GetTransaction().GetAmount(),
-			SessionId:     req.GetTransaction().GetSessionId(),
-			Client:        req.GetClient(),
-			ReturnAddress: req.GetReturnAddress(),
-		},
+		Request:      databasePrepareToPaxosRequest(req),
 		BallotNumber: p.acceptedNum,
 		NodeId:       p.nodeName,
 		CrossShard:   true,
 	}
 
 	// send accept messages
-	for _, address := range p.getClusterIPs() {
+	for _, address := range getClusterIPs(p.nodeName, p.clusterName, p.iptable) {
 		if err := p.client.Accept(address, &msg); err != nil {
 			p.logger.Warn("failed to send accept message")
 		}
@@ -119,7 +103,7 @@ func (p *PaxosHandler) Accepted(msg *paxos.AcceptedMsg) {
 
 	// count the messages, if we got the majority send commit messages
 	if len(p.acceptedMsgs) == 1 {
-		for _, address := range p.getClusterIPs() {
+		for _, address := range getClusterIPs(p.nodeName, p.clusterName, p.iptable) {
 			if err := p.client.Commit(address, p.acceptedNum, p.acceptedVal); err != nil {
 				p.logger.Warn("failed to send commit message")
 			}
@@ -135,24 +119,14 @@ func (p *PaxosHandler) Accepted(msg *paxos.AcceptedMsg) {
 	if p.acceptedVal.CrossShard {
 		pkt.Label = packets.PktDatabasePrepare
 		pkt.Payload = &database.PrepareMsg{
-			Transaction: &database.TransactionMsg{
-				Sender:    p.acceptedVal.GetRequest().GetSender(),
-				Receiver:  p.acceptedVal.GetRequest().GetSender(),
-				Amount:    p.acceptedVal.GetRequest().GetAmount(),
-				SessionId: p.acceptedVal.GetRequest().GetSessionId(),
-			},
+			Transaction:   paxosRequestToDatabaseTransaction(p.acceptedVal.GetRequest()),
 			Client:        p.acceptedVal.Request.GetClient(),
 			ReturnAddress: p.acceptedVal.Request.GetReturnAddress(),
 		}
 	} else {
 		pkt.Label = packets.PktDatabaseRequest
 		pkt.Payload = &database.RequestMsg{
-			Transaction: &database.TransactionMsg{
-				Sender:    p.acceptedVal.GetRequest().GetSender(),
-				Receiver:  p.acceptedVal.GetRequest().GetSender(),
-				Amount:    p.acceptedVal.GetRequest().GetAmount(),
-				SessionId: p.acceptedVal.GetRequest().GetSessionId(),
-			},
+			Transaction:   paxosRequestToDatabaseTransaction(p.acceptedVal.GetRequest()),
 			ReturnAddress: p.acceptedVal.Request.GetReturnAddress(),
 		}
 	}
@@ -169,43 +143,17 @@ func (p *PaxosHandler) Commit(msg *paxos.CommitMsg) {
 	if p.acceptedVal.CrossShard {
 		pkt.Label = packets.PktDatabasePrepare
 		pkt.Payload = &database.PrepareMsg{
-			Transaction: &database.TransactionMsg{
-				Sender:    p.acceptedVal.GetRequest().GetSender(),
-				Receiver:  p.acceptedVal.GetRequest().GetSender(),
-				Amount:    p.acceptedVal.GetRequest().GetAmount(),
-				SessionId: p.acceptedVal.GetRequest().GetSessionId(),
-			},
+			Transaction:   paxosRequestToDatabaseTransaction(p.acceptedVal.GetRequest()),
 			Client:        p.acceptedVal.Request.GetClient(),
 			ReturnAddress: p.acceptedVal.Request.GetReturnAddress(),
 		}
 	} else {
 		pkt.Label = packets.PktDatabaseRequest
 		pkt.Payload = &database.RequestMsg{
-			Transaction: &database.TransactionMsg{
-				Sender:    p.acceptedVal.GetRequest().GetSender(),
-				Receiver:  p.acceptedVal.GetRequest().GetSender(),
-				Amount:    p.acceptedVal.GetRequest().GetAmount(),
-				SessionId: p.acceptedVal.GetRequest().GetSessionId(),
-			},
+			Transaction:   paxosRequestToDatabaseTransaction(p.acceptedVal.GetRequest()),
 			ReturnAddress: p.acceptedVal.Request.GetReturnAddress(),
 		}
 	}
 
 	p.channel <- &pkt
-}
-
-// getClusterIPs returns a list of the cluster IP addresses.
-func (p *PaxosHandler) getClusterIPs() []string {
-	// split the cluster endpoints by ':'
-	parts := strings.Split(p.iptable[fmt.Sprintf("E%s", p.clusterName)], ":")
-
-	// ip list
-	list := make([]string, 0)
-	for _, key := range parts {
-		if key != p.nodeName {
-			list = append(list, p.iptable[key])
-		}
-	}
-
-	return list
 }
