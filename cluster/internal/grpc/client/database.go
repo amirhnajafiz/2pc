@@ -47,3 +47,42 @@ func (c *Client) Ack(address string, sessionId int, isAborted bool) error {
 
 	return nil
 }
+
+// DatabaseCommit accepts a target and sessionId to send a commit message.
+func (c *Client) DatabaseCommit(address string, sessionId int) error {
+	// base connection
+	conn, err := c.connect(address)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	// call Commit RPC
+	if _, err = database.NewDatabaseClient(conn).Commit(context.Background(), &database.CommitMsg{
+		SessionId:     int64(sessionId), // set the session id
+		ReturnAddress: c.nodeId,         // set the return address
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DatabaseAbort accepts a target and sessionId to send an abort message.
+func (c *Client) DatabaseAbort(address string, sessionId int) error {
+	// base connection
+	conn, err := c.connect(address)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	// call Abort RPC
+	if _, err = database.NewDatabaseClient(conn).Abort(context.Background(), &database.AbortMsg{
+		SessionId: int64(sessionId), // set the session id
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
