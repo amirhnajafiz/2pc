@@ -14,9 +14,9 @@ type PaxosHandler struct {
 	client *client.Client
 	logger *zap.Logger
 
-	nodeName    string
-	clusterName string
-	iptable     map[string]string
+	nodeName string
+	nodes    []string
+	iptable  map[string]string
 
 	channel chan *packets.Packet
 
@@ -42,7 +42,7 @@ func (p *PaxosHandler) Request(req *database.RequestMsg) {
 	}
 
 	// send accept messages
-	for _, address := range getClusterIPs(p.nodeName, p.clusterName, p.iptable) {
+	for _, address := range p.nodes {
 		if err := p.client.Accept(address, &msg); err != nil {
 			p.logger.Warn("failed to send accept message")
 		}
@@ -69,7 +69,7 @@ func (p *PaxosHandler) Prepare(req *database.PrepareMsg) {
 	}
 
 	// send accept messages
-	for _, address := range getClusterIPs(p.nodeName, p.clusterName, p.iptable) {
+	for _, address := range p.nodes {
 		if err := p.client.Accept(address, &msg); err != nil {
 			p.logger.Warn("failed to send accept message")
 		}
@@ -103,7 +103,7 @@ func (p *PaxosHandler) Accepted(msg *paxos.AcceptedMsg) {
 
 	// count the messages, if we got the majority send commit messages
 	if len(p.acceptedMsgs) == 1 {
-		for _, address := range getClusterIPs(p.nodeName, p.clusterName, p.iptable) {
+		for _, address := range p.nodes {
 			if err := p.client.Commit(address, p.acceptedNum, p.acceptedVal); err != nil {
 				p.logger.Warn("failed to send commit message")
 			}

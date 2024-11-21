@@ -25,18 +25,16 @@ func NewPaxosHandler(
 	channel chan *packets.Packet,
 	logr *zap.Logger,
 	client *client.Client,
-	nodeName,
-	clusterName string,
+	nodeName string,
+	nodes []string,
 	iptable map[string]string,
 ) *PaxosHandler {
 	return &PaxosHandler{
-		nodeName:    nodeName,
-		clusterName: clusterName,
-		iptable:     iptable,
 		channel:     channel,
 		logger:      logr,
 		client:      client,
 		acceptedNum: &paxos.BallotNumber{Sequence: 0, NodeId: nodeName},
 		acceptedVal: nil,
+		nodes:       nodes,
 	}
 }
