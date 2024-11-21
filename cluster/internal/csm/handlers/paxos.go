@@ -114,27 +114,17 @@ func (p *PaxosHandler) Accepted(msg *paxos.AcceptedMsg) {
 		return
 	}
 
-	// send a new request to our own channel
-	pkt := packets.Packet{}
-
-	// check for the request type
-	if p.acceptedVal.CrossShard {
-		pkt.Label = packets.PktDatabasePrepare
-		pkt.Payload = &database.PrepareMsg{
-			Transaction:   utils.ConvertPaxosRequestToDatabaseTransaction(p.acceptedVal.GetRequest()),
-			Client:        p.acceptedVal.Request.GetClient(),
-			ReturnAddress: p.acceptedVal.Request.GetReturnAddress(),
-		}
-	} else {
-		pkt.Label = packets.PktDatabaseRequest
-		pkt.Payload = &database.RequestMsg{
-			Transaction:   utils.ConvertPaxosRequestToDatabaseTransaction(p.acceptedVal.GetRequest()),
-			ReturnAddress: p.acceptedVal.Request.GetReturnAddress(),
-		}
+	// send a new commit message to our own channel
+	pkt := packets.Packet{
+		Label: packets.PktPaxosCommit,
+		Payload: &paxos.CommitMsg{
+			AcceptedNumber: p.acceptedNum,
+			AcceptedValue:  p.acceptedVal,
+		},
 	}
 
-	p.notify <- true
 	p.channel <- &pkt
+	p.notify <- true
 }
 
 // Commit gets a commit message and creates a new request into the system.
