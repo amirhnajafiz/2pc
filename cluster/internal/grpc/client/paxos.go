@@ -7,7 +7,7 @@ import (
 )
 
 // Accept gets a target and request to call Accept RPC on the target.
-func (c *Client) Accept(address string, req *paxos.Request) error {
+func (c *Client) Accept(address string, msg *paxos.AcceptMsg) error {
 	// base connection
 	conn, err := c.connect(address)
 	if err != nil {
@@ -16,9 +16,7 @@ func (c *Client) Accept(address string, req *paxos.Request) error {
 	defer conn.Close()
 
 	// call accept RPC
-	if _, err := paxos.NewPaxosClient(conn).Accept(context.Background(), &paxos.AcceptMsg{
-		Request: req,
-	}); err != nil {
+	if _, err := paxos.NewPaxosClient(conn).Accept(context.Background(), msg); err != nil {
 		return err
 	}
 

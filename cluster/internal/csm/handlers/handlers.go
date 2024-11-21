@@ -5,6 +5,7 @@ import (
 	"github.com/F24-CSE535/2pc/cluster/internal/lock"
 	"github.com/F24-CSE535/2pc/cluster/internal/storage"
 	"github.com/F24-CSE535/2pc/cluster/pkg/packets"
+	"github.com/F24-CSE535/2pc/cluster/pkg/rpc/paxos"
 
 	"go.uber.org/zap"
 )
@@ -35,5 +36,7 @@ func NewPaxosHandler(
 		channel:     channel,
 		logger:      logr,
 		client:      client,
+		acceptedNum: &paxos.BallotNumber{Sequence: 0, NodeId: nodeName},
+		acceptedVal: nil,
 	}
 }
