@@ -20,10 +20,20 @@ func NewDatabaseHandler(st *storage.Database, logr *zap.Logger, client *client.C
 }
 
 // NewPaxosHandler returns an instance paxos handler.
-func NewPaxosHandler(channel chan *packets.Packet, logr *zap.Logger, client *client.Client) *PaxosHandler {
+func NewPaxosHandler(
+	channel chan *packets.Packet,
+	logr *zap.Logger,
+	client *client.Client,
+	nodeName,
+	clusterName string,
+	iptable map[string]string,
+) *PaxosHandler {
 	return &PaxosHandler{
-		channel: channel,
-		logger:  logr,
-		client:  client,
+		nodeName:    nodeName,
+		clusterName: clusterName,
+		iptable:     iptable,
+		channel:     channel,
+		logger:      logr,
+		client:      client,
 	}
 }

@@ -10,8 +10,13 @@ import (
 
 // PaxosHandler contains methods to perform paxos consensus protocol logic.
 type PaxosHandler struct {
-	client  *client.Client
-	logger  *zap.Logger
+	client *client.Client
+	logger *zap.Logger
+
+	nodeName    string
+	clusterName string
+	iptable     map[string]string
+
 	channel chan *packets.Packet
 
 	acceptedNum  *paxos.BallotNumber
