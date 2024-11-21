@@ -13,15 +13,20 @@ import (
 
 // Manager is responsible for fully creating consensus state machines.
 type Manager struct {
-	Channel chan *packets.Packet
-	Memory  *memory.SharedMemory
-	Storage *storage.Database
+	Channel           chan *packets.Packet
+	DispatcherChannel chan *packets.Packet
+	Memory            *memory.SharedMemory
+	Storage           *storage.Database
 }
 
 // Initialize accepts a number as the number of processing units, then it starts CSMs.
 func (m *Manager) Initialize(logr *zap.Logger, replicas int) {
 	// the manager input channel
 	m.Channel = make(chan *packets.Packet, 10)
+	m.DispatcherChannel = make(chan *packets.Packet, 10)
+
+	// create a new dispatcher
+	dis := NewDispatcher(m.DispatcherChannel, m.Channel)
 
 	// create database handler
 	dbh := handlers.NewDatabaseHandler(
@@ -35,6 +40,7 @@ func (m *Manager) Initialize(logr *zap.Logger, replicas int) {
 	// create paxos handler
 	pxh := handlers.NewPaxosHandler(
 		m.Channel,
+		dis.GetNotifyChannel(),
 		client.NewClient(m.Memory.GetNodeName()),
 		logr.Named("csm-paxos-handler"),
 		m.Memory,

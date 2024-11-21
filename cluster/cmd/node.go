@@ -37,7 +37,7 @@ func (n node) main(port int, name string) {
 		}
 
 		// run the grpc server
-		if err := b.ListenAnsServer(port, manager.Channel, n.database); err != nil {
+		if err := b.ListenAnsServer(port, manager.Channel, manager.DispatcherChannel, n.database); err != nil {
 			n.logger.Panic("grpc server failed", zap.Error(err))
 		}
 	}()

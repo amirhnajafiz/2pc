@@ -13,10 +13,12 @@ import (
 
 // PaxosHandler contains methods to perform paxos consensus protocol logic.
 type PaxosHandler struct {
-	client  *client.Client
-	logger  *zap.Logger
-	memory  *memory.SharedMemory
+	client *client.Client
+	logger *zap.Logger
+	memory *memory.SharedMemory
+
 	channel chan *packets.Packet
+	notify  chan bool
 
 	acceptedNum  *paxos.BallotNumber
 	acceptedVal  *paxos.AcceptMsg
@@ -108,6 +110,8 @@ func (p *PaxosHandler) Accepted(msg *paxos.AcceptedMsg) {
 		}
 
 		p.acceptedMsgs = nil
+	} else {
+		return
 	}
 
 	// send a new request to our own channel
@@ -129,6 +133,7 @@ func (p *PaxosHandler) Accepted(msg *paxos.AcceptedMsg) {
 		}
 	}
 
+	p.notify <- true
 	p.channel <- &pkt
 }
 

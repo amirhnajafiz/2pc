@@ -15,8 +15,9 @@ import (
 type DatabaseService struct {
 	database.UnimplementedDatabaseServer
 
-	Storage *storage.Database
-	Channel chan *packets.Packet
+	Storage           *storage.Database
+	Channel           chan *packets.Packet
+	DispatcherChannel chan *packets.Packet
 }
 
 // Request RPC sends a new request packet to CSMs.

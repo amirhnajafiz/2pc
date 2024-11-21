@@ -31,6 +31,7 @@ func NewDatabaseHandler(
 // NewPaxosHandler returns an instance paxos handler.
 func NewPaxosHandler(
 	channel chan *packets.Packet,
+	channelNotify chan bool,
 	client *client.Client,
 	logr *zap.Logger,
 	mem *memory.SharedMemory,
@@ -38,6 +39,7 @@ func NewPaxosHandler(
 	return &PaxosHandler{
 		memory:      mem,
 		channel:     channel,
+		notify:      channelNotify,
 		logger:      logr,
 		client:      client,
 		acceptedNum: &paxos.BallotNumber{Sequence: 0, NodeId: mem.GetNodeName()},

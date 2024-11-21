@@ -23,6 +23,7 @@ type Bootstrap struct {
 func (b *Bootstrap) ListenAnsServer(
 	port int,
 	channel chan *packets.Packet,
+	dchannel chan *packets.Packet,
 	st *storage.Database,
 ) error {
 	// on the local network, listen to a port
@@ -39,8 +40,9 @@ func (b *Bootstrap) ListenAnsServer(
 
 	// register all gRPC services
 	database.RegisterDatabaseServer(server, &services.DatabaseService{
-		Storage: st,
-		Channel: channel,
+		Storage:           st,
+		Channel:           channel,
+		DispatcherChannel: dchannel,
 	})
 	paxos.RegisterPaxosServer(server, &services.PaxosService{
 		Channel: channel,
