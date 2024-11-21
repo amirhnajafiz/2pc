@@ -59,5 +59,5 @@ message AcceptedMsg {
 // commit message is sent by the leader to followers to commit a procedure.
 message CommitMsg {
   BallotNumber accepted_number = 1;
-  AcceptedMsg accepted_value = 2;
+  AcceptMsg accepted_value = 2;
 }

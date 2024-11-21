@@ -46,6 +46,21 @@ func (c *Client) Accepted(address string, acceptedNum *paxos.BallotNumber, accep
 }
 
 // Commit gets a target to call Commit RPC on the target.
-func (c *Client) Commit() error {
+func (c *Client) Commit(address string, acceptedNum *paxos.BallotNumber, acceptedVal *paxos.AcceptMsg) error {
+	// base connection
+	conn, err := c.connect(address)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	// call commit RPC
+	if _, err := paxos.NewPaxosClient(conn).Commit(context.Background(), &paxos.CommitMsg{
+		AcceptedNumber: acceptedNum,
+		AcceptedValue:  acceptedVal,
+	}); err != nil {
+		return err
+	}
+
 	return nil
 }
