@@ -12,6 +12,7 @@ import (
 
 // Manager is responsible for fully creating consensus state machines.
 type Manager struct {
+	NodeName    string
 	LockManager *lock.Manager
 	Storage     *storage.Database
 	Channel     chan *packets.Packet

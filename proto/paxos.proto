@@ -32,22 +32,28 @@ message PongMsg {
   string node_id = 2;
 }
 
+// Request is used by the clients to forward a client's request to other nodes.
+message Request {
+  string sender = 1;
+  string receiver = 2;
+  int64 amount = 3;
+  int64 session_id = 4;
+  string client = 5;
+  string return_address = 6;
+}
+
 // accept message is sent by the leader to the followers on new request.
 message AcceptMsg {
   BallotNumber ballot_number = 1;
-  string sender = 2;
-  string receiver = 3;
-  int64 amount = 4;
-  int64 session_id = 5;
-  string client = 6;
-  string return_address = 7;
-  string node_id = 8;
+  Request request = 2;
+  string node_id = 3;
+  bool cross_shard = 4;
 }
 
 // accepted message is sent by the followers to the leader on new accept.
 message AcceptedMsg {
   BallotNumber accepted_number = 1;
-  AcceptedMsg accepted_value = 2;
+  AcceptMsg accepted_value = 2;
 }
 
 // commit message is sent by the leader to followers to commit a procedure.

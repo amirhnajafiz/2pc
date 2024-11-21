@@ -16,10 +16,11 @@ type node struct {
 	terminationChannel chan bool
 }
 
-func (n node) main(port int) {
+func (n node) main(port int, name string) {
 	go func() {
 		// create a new CSM manager
 		manager := csm.Manager{
+			NodeName:    name,
 			LockManager: lock.NewManager(),
 			Storage:     n.database,
 		}

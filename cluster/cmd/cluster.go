@@ -129,7 +129,7 @@ func (c *Cluster) scaleUp(loger *zap.Logger) error {
 	c.ports++
 
 	// start the node
-	go n.main(port)
+	go n.main(port, name)
 
 	// increase the wait-group
 	c.wg.Add(1)
