@@ -1,6 +1,7 @@
 package csm
 
 import (
+	"github.com/F24-CSE535/2pc/cluster/internal/config/paxos"
 	"github.com/F24-CSE535/2pc/cluster/internal/csm/handlers"
 	"github.com/F24-CSE535/2pc/cluster/internal/grpc/client"
 	"github.com/F24-CSE535/2pc/cluster/internal/lock"
@@ -13,10 +14,12 @@ import (
 
 // Manager is responsible for fully creating consensus state machines.
 type Manager struct {
+	Cfg     *paxos.Config
+	Memory  *memory.SharedMemory
+	Storage *storage.Database
+
 	Channel           chan *packets.Packet
 	DispatcherChannel chan *packets.Packet
-	Memory            *memory.SharedMemory
-	Storage           *storage.Database
 }
 
 // Initialize accepts a number as the number of processing units, then it starts CSMs.

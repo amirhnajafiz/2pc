@@ -133,6 +133,7 @@ func (c *Cluster) scaleUp(loger *zap.Logger) error {
 
 	// create a new node
 	n := node{
+		cfg:                &c.cfg.PaxosConfig,
 		logger:             loger.Named(name),
 		database:           db,
 		terminationChannel: make(chan bool),

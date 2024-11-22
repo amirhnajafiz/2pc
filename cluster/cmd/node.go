@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/F24-CSE535/2pc/cluster/internal/config/paxos"
 	"github.com/F24-CSE535/2pc/cluster/internal/csm"
 	"github.com/F24-CSE535/2pc/cluster/internal/grpc"
 	"github.com/F24-CSE535/2pc/cluster/internal/memory"
@@ -11,6 +12,7 @@ import (
 
 // node is a wrapper for a single cluster entity.
 type node struct {
+	cfg                *paxos.Config
 	logger             *zap.Logger
 	database           *storage.Database
 	terminationChannel chan bool
@@ -24,6 +26,7 @@ func (n node) main(port int, name string) {
 	go func() {
 		// create a new CSM manager
 		manager := csm.Manager{
+			Cfg:     n.cfg,
 			Storage: n.database,
 			Memory:  memory.NewSharedMemory(n.leader, name, n.cluster, n.iptable),
 		}
