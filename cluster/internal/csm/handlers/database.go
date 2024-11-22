@@ -69,7 +69,10 @@ func (d DatabaseHandler) Request(ra string, trx *database.TransactionMsg) {
 		}
 
 		// update last commit
-		d.memory.SetLastCommittedBallotNumber(sessionId)
+		lcm := d.memory.GetBallotNumberBySessionId(sessionId)
+		if lcm != nil && lcm.GetSequence() >= d.memory.GetLastCommittedBallotNumber().GetSequence() {
+			d.memory.SetLastCommittedBallotNumber(lcm)
+		}
 
 		d.logger.Debug(
 			"transaction committed",
@@ -209,7 +212,10 @@ func (d DatabaseHandler) Commit(msg *database.CommitMsg) {
 	}
 
 	// update last commit
-	d.memory.SetLastCommittedBallotNumber(sessionId)
+	lcm := d.memory.GetBallotNumberBySessionId(sessionId)
+	if lcm != nil && lcm.GetSequence() >= d.memory.GetLastCommittedBallotNumber().GetSequence() {
+		d.memory.SetLastCommittedBallotNumber(lcm)
+	}
 
 	d.logger.Debug(
 		"transaction committed",

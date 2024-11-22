@@ -32,9 +32,9 @@ func (c *ConsensusStateMachine) Start() {
 		case packets.PktDatabaseAbort: // comes from the gRPC
 			c.databaseHandler.Abort(int(pkt.Payload.(*database.AbortMsg).GetSessionId()))
 		case packets.PktPaxosRequest: // comes from the gRPC
-			c.paxosHandler.Request(pkt.Payload.(*database.RequestMsg))
+			c.paxosHandler.Request(pkt.Payload.(*database.RequestMsg), false)
 		case packets.PktPaxosPrepare: // comes from the gRPC
-			c.paxosHandler.Prepare(pkt.Payload.(*database.PrepareMsg))
+			c.paxosHandler.Request(pkt.Payload.(*database.PrepareMsg), true)
 		case packets.PktPaxosAccept: // comes from the gRPC
 			c.paxosHandler.Accept(pkt.Payload.(*paxos.AcceptMsg))
 		case packets.PktPaxosAccepted: // comes from the gRPC

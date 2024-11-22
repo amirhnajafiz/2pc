@@ -30,22 +30,27 @@ type PaxosHandler struct {
 }
 
 // Request accepts a database request and converts it to paxos request.
-func (p *PaxosHandler) Request(req *database.RequestMsg) {
+func (p *PaxosHandler) Request(payload interface{}, isPrepare bool) {
 	// create a list for accepted messages
 	p.memory.SetAcceptedMessages()
 
 	// increament ballot-number
 	p.memory.IncBallotNumber()
-	p.memory.SetAcceptedNum(p.memory.GetBallotNumber())
 
-	// create paxos request
+	// create paxos accept message
 	msg := paxos.AcceptMsg{
-		Request:      utils.ConvertDatabaseRequestToPaxosRequest(req),
-		BallotNumber: p.memory.GetAcceptedNum(),
+		BallotNumber: p.memory.GetBallotNumber(),
 		NodeId:       p.memory.GetNodeName(),
 		CrossShard:   false,
 	}
 
+	// set the request based on prepare type
+	if isPrepare {
+		msg.Request = utils.ConvertDatabasePrepareToPaxosRequest(payload.(*database.PrepareMsg))
+	} else {
+		msg.Request = utils.ConvertDatabaseRequestToPaxosRequest(payload.(*database.RequestMsg))
+	}
+
 	// send accept messages
 	for _, address := range p.memory.GetClusterIPs() {
 		if err := p.client.Accept(address, &msg); err != nil {
@@ -54,40 +59,10 @@ func (p *PaxosHandler) Request(req *database.RequestMsg) {
 	}
 
 	// start consensus timer
-	go p.paxosTimer.StartConsensusTimer(req.GetReturnAddress(), int(req.GetTransaction().GetSessionId()))
+	go p.paxosTimer.StartConsensusTimer(msg.GetRequest().GetReturnAddress(), int(msg.GetRequest().GetSessionId()))
 
-	// save the accepted val
-	p.memory.SetAcceptedVal(&msg)
-}
-
-// Prepare accepts a database prepare and converts it to paxos request.
-func (p *PaxosHandler) Prepare(req *database.PrepareMsg) {
-	// create a list for accepted messages
-	p.memory.SetAcceptedMessages()
-
-	// increament ballot-number
-	p.memory.IncBallotNumber()
+	// save the accepted-num and accepted-val
 	p.memory.SetAcceptedNum(p.memory.GetBallotNumber())
-
-	// create paxos request
-	msg := paxos.AcceptMsg{
-		Request:      utils.ConvertDatabasePrepareToPaxosRequest(req),
-		BallotNumber: p.memory.GetAcceptedNum(),
-		NodeId:       p.memory.GetNodeName(),
-		CrossShard:   true,
-	}
-
-	// send accept messages
-	for _, address := range p.memory.GetClusterIPs() {
-		if err := p.client.Accept(address, &msg); err != nil {
-			p.logger.Warn("failed to send accept message", zap.Error(err))
-		}
-	}
-
-	// start consensus timer
-	go p.paxosTimer.StartConsensusTimer(req.GetReturnAddress(), int(req.GetTransaction().GetSessionId()))
-
-	// save the accepted val
 	p.memory.SetAcceptedVal(&msg)
 }
 
@@ -101,7 +76,6 @@ func (p *PaxosHandler) Accept(msg *paxos.AcceptMsg) {
 	// update accepted number and accepted value
 	p.memory.SetAcceptedNum(msg.GetBallotNumber())
 	p.memory.SetAcceptedVal(msg)
-	p.memory.SetBallotNumber(msg.GetBallotNumber().GetSequence())
 
 	// send accepted message
 	if err := p.client.Accepted(p.memory.GetFromIPTable(msg.GetNodeId()), p.memory.GetAcceptedNum(), p.memory.GetAcceptedVal()); err != nil {
@@ -120,7 +94,7 @@ func (p *PaxosHandler) Accepted(msg *paxos.AcceptedMsg) {
 	p.memory.AppendAcceptedMessage(msg)
 
 	// count the messages, if we got the majority
-	if p.memory.AcceptedMessagesSize() < p.majorityAcceptedMessages {
+	if p.memory.GetAcceptedMessagesSize() < p.majorityAcceptedMessages {
 		return
 	}
 
@@ -156,8 +130,8 @@ func (p *PaxosHandler) Commit(msg *paxos.CommitMsg) {
 	// send a new request to our own channel
 	pkt := packets.Packet{}
 
-	// get accepted val
-	acceptedVal := p.memory.GetAcceptedVal()
+	// get accepted valu from message
+	acceptedVal := msg.GetAcceptedValue()
 
 	// check for the request type
 	if acceptedVal.CrossShard {
@@ -175,7 +149,7 @@ func (p *PaxosHandler) Commit(msg *paxos.CommitMsg) {
 		}
 	}
 
-	// save the paxos item into storage
+	// save the paxos item into persistant storage
 	if err := p.storage.InsertPaxosItem(&models.PaxosItem{
 		BallotNumberNum: int(msg.GetAcceptedNumber().GetSequence()),
 		BallotNumberPid: msg.GetAcceptedNumber().GetNodeId(),
@@ -188,8 +162,10 @@ func (p *PaxosHandler) Commit(msg *paxos.CommitMsg) {
 		p.logger.Warn("failed to store paxos item", zap.Error(err))
 	}
 
-	// save the ballot-number in memory
-	p.memory.SetPotentialBallotNumber(int(msg.GetAcceptedValue().GetRequest().GetSessionId()), msg.GetAcceptedNumber())
+	// save the ballot-number in memory map
+	p.memory.AppendBallotNumber(int(msg.GetAcceptedValue().GetRequest().GetSessionId()), msg.GetAcceptedNumber())
+	p.memory.SetBallotNumber(p.memory.GetAcceptedNum().GetSequence() + 1)
+	p.memory.SetAcceptedVal(nil)
 
 	p.csmsChan <- &pkt
 }
@@ -270,6 +246,6 @@ func (p *PaxosHandler) Sync(msg *paxos.SyncMsg) {
 	}
 
 	// update our last committed and ballot-number
-	p.memory.ResetLastCommittedBallotNumber(msg.GetLastCommitted())
+	p.memory.SetLastCommittedBallotNumber(msg.GetLastCommitted())
 	p.memory.SetBallotNumber(msg.GetLastCommitted().GetSequence() + 1)
 }

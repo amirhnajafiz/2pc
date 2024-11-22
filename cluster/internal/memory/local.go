@@ -15,22 +15,22 @@ type SharedMemory struct {
 	acceptedVal  *paxos.AcceptMsg
 	acceptedMsgs []*paxos.AcceptedMsg
 
-	potentialCommittedBallotNumbers map[int]*paxos.BallotNumber
-	lastCommittedBallotNumber       *paxos.BallotNumber
+	lastCommitted    *paxos.BallotNumber
+	ballotNumbersMap map[int]*paxos.BallotNumber
 }
 
 // NewSharedMemory returns an instance of shared memory.
 func NewSharedMemory(leader, nm, cn string, iptable map[string]string) *SharedMemory {
 	instance := &SharedMemory{
-		leader:                          leader,
-		nodeName:                        nm,
-		clusterName:                     cn,
-		iptable:                         iptable,
-		ballotNumber:                    &paxos.BallotNumber{Sequence: 0, NodeId: nm},
-		acceptedNum:                     &paxos.BallotNumber{Sequence: 0, NodeId: nm},
-		acceptedVal:                     nil,
-		potentialCommittedBallotNumbers: make(map[int]*paxos.BallotNumber),
-		lastCommittedBallotNumber:       &paxos.BallotNumber{Sequence: 0, NodeId: nm},
+		leader:           leader,
+		nodeName:         nm,
+		clusterName:      cn,
+		iptable:          iptable,
+		ballotNumber:     &paxos.BallotNumber{Sequence: 0, NodeId: nm},
+		acceptedNum:      &paxos.BallotNumber{Sequence: 0, NodeId: nm},
+		lastCommitted:    &paxos.BallotNumber{Sequence: 0, NodeId: nm},
+		acceptedVal:      nil,
+		ballotNumbersMap: make(map[int]*paxos.BallotNumber),
 	}
 
 	instance.SetClusterIPs()
