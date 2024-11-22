@@ -118,7 +118,7 @@ func (c *Cluster) scaleUp(loger *zap.Logger) error {
 	}
 
 	// check if the collection is empty
-	if isEmpty, err := db.IsCollectionEmpty(); err != nil {
+	if isEmpty, err := db.IsClientsCollectionEmpty(); err != nil {
 		return fmt.Errorf("failed to check %s clients collection status: %v", name, err)
 	} else if isEmpty {
 		// clone the shards into the node database

@@ -135,11 +135,24 @@ func (d *Database) GetWALs() ([]*models.Log, error) {
 	return results, nil
 }
 
-// GetCommitteds returns all committed WALs.
-func (d *Database) GetCommittedWALs() ([]*models.Log, error) {
-	// create a filter for the specified log
+// GetLogsWithCommittedWALs returns the committed transactions.
+func (d *Database) GetLogsWithCommittedWALs(from int) ([]*models.Log, error) {
+	// create a filet for commit logs that are after the from input
+	commitFilter := bson.M{
+		"message":       enums.WALCommit,
+		"ballot_number": bson.M{"$gt": from},
+	}
+
+	// run commits query
+	commitCursor, err := d.logsCollection.Distinct(context.TODO(), "session_id", commitFilter)
+	if err != nil {
+		return nil, err
+	}
+
+	// create logs filter
 	filter := bson.M{
-		"message": enums.WALCommit,
+		"message":    enums.WALUpdate,
+		"session_id": bson.M{"$in": commitCursor},
 	}
 
 	// find all documents that match the filter

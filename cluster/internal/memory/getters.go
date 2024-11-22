@@ -52,6 +52,11 @@ func (s *SharedMemory) IsAcceptedMessagesEmpty() bool {
 	return s.acceptedMsgs == nil
 }
 
+// GetAcceptedMessages returns the node accepted messages.
+func (s *SharedMemory) GetAcceptedMessages() []*paxos.AcceptedMsg {
+	return s.acceptedMsgs
+}
+
 // AcceptedMessagesSize returns the len of accepted messages.
 func (s *SharedMemory) GetAcceptedMessagesSize() int {
 	return len(s.acceptedMsgs)

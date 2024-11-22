@@ -6,7 +6,6 @@ import (
 	"github.com/F24-CSE535/2pc/cluster/internal/memory"
 	"github.com/F24-CSE535/2pc/cluster/internal/storage"
 	"github.com/F24-CSE535/2pc/cluster/internal/utils"
-	"github.com/F24-CSE535/2pc/cluster/pkg/models"
 	"github.com/F24-CSE535/2pc/cluster/pkg/packets"
 	"github.com/F24-CSE535/2pc/cluster/pkg/rpc/database"
 	"github.com/F24-CSE535/2pc/cluster/pkg/rpc/paxos"
@@ -73,12 +72,20 @@ func (p *PaxosHandler) Accept(msg *paxos.AcceptMsg) {
 		return
 	}
 
-	// update accepted number and accepted value
-	p.memory.SetAcceptedNum(msg.GetBallotNumber())
-	p.memory.SetAcceptedVal(msg)
+	// don't accept old accepted nums
+	if val := p.memory.GetAcceptedNum(); val != nil && val.GetSequence() >= msg.GetBallotNumber().GetSequence() {
+		return
+	}
 
-	// send accepted message
-	if err := p.client.Accepted(p.memory.GetFromIPTable(msg.GetNodeId()), p.memory.GetAcceptedNum(), p.memory.GetAcceptedVal()); err != nil {
+	// update accepted number and accepted value if there is nothing stored
+	acceptedVal := p.memory.GetAcceptedVal()
+	if acceptedVal == nil {
+		p.memory.SetAcceptedNum(msg.GetBallotNumber())
+		p.memory.SetAcceptedVal(msg)
+	}
+
+	// send accepted message back to the leader
+	if err := p.client.Accepted(p.memory.GetFromIPTable(msg.GetNodeId()), p.memory.GetAcceptedNum(), acceptedVal); err != nil {
 		p.logger.Warn("failed to send accepted message", zap.String("to", msg.GetNodeId()))
 	}
 }
@@ -101,9 +108,23 @@ func (p *PaxosHandler) Accepted(msg *paxos.AcceptedMsg) {
 	// stop the consensus timer
 	p.paxosTimer.FinishConsensusTimer()
 
-	// send commit messages
+	// select the accepted number and accepted value
+	var (
+		tmpAcceptedNum *paxos.BallotNumber
+		acceptedVal    *paxos.AcceptMsg = p.memory.GetAcceptedVal()
+	)
+	for _, item := range p.memory.GetAcceptedMessages() {
+		if item.GetAcceptedValue() != nil {
+			if tmpAcceptedNum == nil || tmpAcceptedNum.GetSequence() < item.GetAcceptedNumber().GetSequence() {
+				tmpAcceptedNum = item.GetAcceptedNumber()
+				acceptedVal = item.GetAcceptedValue()
+			}
+		}
+	}
+
+	// send commit messages to all servers
 	for _, address := range p.memory.GetClusterIPs() {
-		if err := p.client.Commit(address, p.memory.GetAcceptedNum(), p.memory.GetAcceptedVal()); err != nil {
+		if err := p.client.Commit(address, p.memory.GetAcceptedNum(), acceptedVal); err != nil {
 			p.logger.Warn("failed to send commit message")
 		}
 	}
@@ -149,22 +170,12 @@ func (p *PaxosHandler) Commit(msg *paxos.CommitMsg) {
 		}
 	}
 
-	// save the paxos item into persistant storage
-	if err := p.storage.InsertPaxosItem(&models.PaxosItem{
-		BallotNumberNum: int(msg.GetAcceptedNumber().GetSequence()),
-		BallotNumberPid: msg.GetAcceptedNumber().GetNodeId(),
-		Client:          msg.GetAcceptedValue().GetRequest().GetClient(),
-		Sender:          msg.GetAcceptedValue().GetRequest().GetSender(),
-		Receiver:        msg.GetAcceptedValue().GetRequest().GetReceiver(),
-		Amount:          int(msg.GetAcceptedValue().GetRequest().GetAmount()),
-		SessionId:       int(msg.GetAcceptedValue().GetRequest().GetSessionId()),
-	}); err != nil {
-		p.logger.Warn("failed to store paxos item", zap.Error(err))
-	}
-
 	// save the ballot-number in memory map
-	p.memory.AppendBallotNumber(int(msg.GetAcceptedValue().GetRequest().GetSessionId()), msg.GetAcceptedNumber())
-	p.memory.SetBallotNumber(p.memory.GetAcceptedNum().GetSequence() + 1)
+	p.memory.SetSessionIdBallotNumber(int(msg.GetAcceptedValue().GetRequest().GetSessionId()), msg.GetAcceptedNumber())
+	p.memory.SetBallotNumber(p.memory.GetAcceptedNum().GetSequence())
+
+	// reset accepted-num and accepted-val
+	p.memory.SetAcceptedNum(nil)
 	p.memory.SetAcceptedVal(nil)
 
 	p.csmsChan <- &pkt
@@ -183,7 +194,7 @@ func (p *PaxosHandler) Ping(msg *paxos.PingMsg) {
 	p.leaderTimer.StopLeaderPinger()
 
 	// check the last committed message
-	diff := p.memory.GetLastCommittedBallotNumber().GetSequence() - msg.GetLastCommitted().GetSequence()
+	diff := p.memory.GetBallotNumber().GetSequence() - msg.GetLastCommitted().GetSequence()
 	if diff > 0 {
 		// sync the leader by generating a pong message
 		p.csmsChan <- &packets.Packet{
@@ -195,7 +206,7 @@ func (p *PaxosHandler) Ping(msg *paxos.PingMsg) {
 		}
 	} else if diff < 0 {
 		// demand a sync by calling pong
-		if err := p.client.Pong(p.memory.GetFromIPTable(msg.GetNodeId()), p.memory.GetLastCommittedBallotNumber()); err != nil {
+		if err := p.client.Pong(p.memory.GetFromIPTable(msg.GetNodeId()), p.memory.GetBallotNumber()); err != nil {
 			p.logger.Warn("failed to send pong message", zap.Error(err), zap.String("to", msg.GetNodeId()))
 		}
 	}
@@ -204,7 +215,7 @@ func (p *PaxosHandler) Ping(msg *paxos.PingMsg) {
 // Pong gets a pong message and syncs the follower.
 func (p *PaxosHandler) Pong(msg *paxos.PongMsg) {
 	// get paxos items
-	pis, err := p.storage.GetPaxosItems(int(msg.GetLastCommitted().GetSequence()))
+	pis, err := p.storage.GetLogsWithCommittedWALs(int(msg.GetLastCommitted().GetSequence()))
 	if err != nil {
 		p.logger.Warn("failed to get paxos items", zap.Error(err))
 	}
@@ -212,21 +223,14 @@ func (p *PaxosHandler) Pong(msg *paxos.PongMsg) {
 	// create items
 	items := make([]*paxos.SyncItem, 0)
 	for _, pi := range pis {
-		tmp := paxos.SyncItem{
-			Record: pi.Client,
-		}
-
-		if pi.Client == pi.Sender {
-			tmp.Value = int64(-1 * pi.Amount)
-		} else {
-			tmp.Value = int64(pi.Amount)
-		}
-
-		items = append(items, &tmp)
+		items = append(items, &paxos.SyncItem{
+			Record: pi.Record,
+			Value:  int64(pi.NewValue),
+		})
 	}
 
 	// sync the follower by calling sync
-	if err := p.client.Sync(p.memory.GetFromIPTable(msg.GetNodeId()), p.memory.GetLastCommittedBallotNumber(), items); err != nil {
+	if err := p.client.Sync(p.memory.GetFromIPTable(msg.GetNodeId()), p.memory.GetBallotNumber(), items); err != nil {
 		p.logger.Warn("failed to send sync message", zap.Error(err))
 	}
 }
@@ -234,7 +238,7 @@ func (p *PaxosHandler) Pong(msg *paxos.PongMsg) {
 // Sync gets a sync message and syncs the node.
 func (p *PaxosHandler) Sync(msg *paxos.SyncMsg) {
 	// drop the old sync messages
-	if msg.GetLastCommitted().GetSequence() < p.memory.GetLastCommittedBallotNumber().GetSequence() {
+	if msg.GetLastCommitted().GetSequence() < p.memory.GetBallotNumber().GetSequence() {
 		return
 	}
 
@@ -245,7 +249,10 @@ func (p *PaxosHandler) Sync(msg *paxos.SyncMsg) {
 		}
 	}
 
-	// update our last committed and ballot-number
-	p.memory.SetLastCommittedBallotNumber(msg.GetLastCommitted())
-	p.memory.SetBallotNumber(msg.GetLastCommitted().GetSequence() + 1)
+	// update our ballot-number
+	p.memory.SetBallotNumber(msg.GetLastCommitted().GetSequence())
+
+	// reset accepted-num and accepted-val
+	p.memory.SetAcceptedNum(nil)
+	p.memory.SetAcceptedVal(nil)
 }
