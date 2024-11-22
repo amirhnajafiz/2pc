@@ -94,14 +94,17 @@ Each server has the following RPCs to perform `multi-paxos` when receiving `requ
 
 - `ping` : the leader calls this every `N` seconds. if a follower does not get `ping`s from the leader, it will send `ping` itself until one leader is selected. In the `ping-pong` process, leader and followers update themselves to sync each other.
 - `pong` : the followers return the ping answer for any sync process.
+- `sync` : the caller tries to sync the callee.
 - `accept` : the leader calls accept on every cluster node to update their accepted num and accepted val.
 - `commit` : the leader calls commit on getting `f+1` accepted messages.
 
-#### Ping-Pong
+#### Ping-Pong & Sync
 
 On `ping` operation, leaders sends its last accepted ballot-number and it's id to all nodes. The nodes get this message and call `pong` if the server is left behind. Otherwise, they update themselves.
 
 If the leader does not send `ping`s after a while. All follower nodes start `ping` others and the node with higher id will become the new leader.
+
+When a node gets `ping`, if the leader is not synced, it calls the leader `sync` RPC. On the other hand, if a node is not synced with the leader, it calls `pong` RPC so the leader calls `sync` on that node.
 
 #### Accept
 

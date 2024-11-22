@@ -113,6 +113,9 @@ func (p *PaxosHandler) consensusTimer(ra string, sessionId int) {
 		if err := p.client.Reply(ra, enums.RespConsensusFailed, sessionId); err != nil {
 			p.logger.Warn("failed to send reply message", zap.Error(err), zap.String("to", ra))
 		}
+
+		// accept next request
+		p.notify <- true
 	}
 }
 
