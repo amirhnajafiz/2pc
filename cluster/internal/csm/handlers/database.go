@@ -76,6 +76,11 @@ func (d DatabaseHandler) Request(ra string, trx *database.TransactionMsg) {
 		)
 	}
 
+	// commit the paxos item
+	if err := d.storage.CommitPaxosItem(sessionId); err != nil {
+		d.logger.Warn("failed to commit paxos item", zap.Error(err))
+	}
+
 	// call the reply RPC on client, if the node is the leader
 	if d.memory.GetLeader() == d.memory.GetNodeName() {
 		if err := d.client.Reply(ra, response, int(trx.GetSessionId())); err != nil {
@@ -193,6 +198,11 @@ func (d DatabaseHandler) Commit(msg *database.CommitMsg) {
 	}); err != nil {
 		d.logger.Warn("failed to store log", zap.Error(err))
 		return
+	}
+
+	// commit the paxos item
+	if err := d.storage.CommitPaxosItem(sessionId); err != nil {
+		d.logger.Warn("failed to commit paxos item", zap.Error(err))
 	}
 
 	d.logger.Debug(
