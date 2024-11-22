@@ -183,9 +183,15 @@ func (p *PaxosHandler) Prepare(req *database.PrepareMsg) {
 
 // Accept gets a new accept message and updates it's datastore and returns an accepted message.
 func (p *PaxosHandler) Accept(msg *paxos.AcceptMsg) {
+	// don't accept old ballot-numbers
+	if msg.GetBallotNumber().GetSequence() < p.ballotNumber.GetSequence() {
+		return
+	}
+
 	// update accepted number and accepted value
 	p.acceptedNum = msg.GetBallotNumber()
 	p.acceptedVal = msg
+	p.ballotNumber.Sequence = p.acceptedNum.GetSequence()
 
 	// send accepted message
 	if err := p.client.Accepted(p.memory.GetFromIPTable(msg.GetNodeId()), p.acceptedNum, p.acceptedVal); err != nil {
