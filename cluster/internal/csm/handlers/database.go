@@ -47,6 +47,14 @@ func (d DatabaseHandler) Request(ra string, trx *database.TransactionMsg) {
 		return
 	}
 
+	// create a list of WALs
+	wals := make([]*models.Log, 0)
+	wals = append(wals, &models.Log{
+		SessionId:    sessionId,
+		Message:      enums.WALStart,
+		BallotNumber: int(d.memory.GetBallotNumberBySessionId(sessionId).GetSequence())},
+	)
+
 	response := ""
 
 	// check the balance and transaction amount
@@ -61,18 +69,30 @@ func (d DatabaseHandler) Request(ra string, trx *database.TransactionMsg) {
 			return
 		}
 
+		// add logs to store records
+		wals = append(wals,
+			&models.Log{
+				SessionId:    sessionId,
+				Message:      enums.WALUpdate,
+				Record:       trx.GetSender(),
+				NewValue:     -1 * int(trx.GetAmount()),
+				BallotNumber: int(d.memory.GetBallotNumberBySessionId(sessionId).GetSequence()),
+			},
+			&models.Log{
+				SessionId:    sessionId,
+				Message:      enums.WALUpdate,
+				Record:       trx.GetReceiver(),
+				NewValue:     int(trx.GetAmount()),
+				BallotNumber: int(d.memory.GetBallotNumberBySessionId(sessionId).GetSequence()),
+			},
+			&models.Log{
+				SessionId:    sessionId,
+				Message:      enums.WALCommit,
+				BallotNumber: int(d.memory.GetBallotNumberBySessionId(sessionId).GetSequence()),
+			},
+		)
+
 		response = enums.RespOK
-
-		// commit the paxos item
-		if err := d.storage.CommitPaxosItem(sessionId); err != nil {
-			d.logger.Warn("failed to commit paxos item", zap.Error(err))
-		}
-
-		// update last commit
-		lcm := d.memory.GetBallotNumberBySessionId(sessionId)
-		if lcm != nil && lcm.GetSequence() >= d.memory.GetLastCommittedBallotNumber().GetSequence() {
-			d.memory.SetLastCommittedBallotNumber(lcm)
-		}
 
 		d.logger.Debug(
 			"transaction committed",
@@ -81,10 +101,24 @@ func (d DatabaseHandler) Request(ra string, trx *database.TransactionMsg) {
 	} else {
 		response = enums.RespFailed
 
+		wals = append(wals,
+			&models.Log{
+				SessionId:    sessionId,
+				Message:      enums.WALAbort,
+				BallotNumber: int(d.memory.GetBallotNumberBySessionId(sessionId).GetSequence()),
+			},
+		)
+
 		d.logger.Debug(
 			"client balance is not enough to process the transaction",
 			zap.Int64("session id", trx.GetSessionId()),
 		)
+	}
+
+	// store the logs
+	if err := d.storage.InsertBatchWALs(wals); err != nil {
+		d.logger.Warn("failed to store logs", zap.Error(err))
+		return
 	}
 
 	// call the reply RPC on client, if the node is the leader
@@ -150,7 +184,7 @@ func (d DatabaseHandler) Prepare(msg *database.PrepareMsg) {
 	}
 
 	// store the logs
-	if err := d.storage.InsertBatchWAL(wals); err != nil {
+	if err := d.storage.InsertBatchWALs(wals); err != nil {
 		d.logger.Warn("failed to store logs", zap.Error(err))
 		return
 	}
@@ -179,7 +213,7 @@ func (d DatabaseHandler) Commit(msg *database.CommitMsg) {
 	}
 
 	// get all update logs
-	wals, err := d.storage.RetrieveWALs(sessionId)
+	wals, err := d.storage.GetWALsBySessionId(sessionId)
 	if err != nil {
 		d.logger.Warn("failed to get logs", zap.Error(err))
 		return
@@ -204,17 +238,6 @@ func (d DatabaseHandler) Commit(msg *database.CommitMsg) {
 	}); err != nil {
 		d.logger.Warn("failed to store log", zap.Error(err))
 		return
-	}
-
-	// commit the paxos item
-	if err := d.storage.CommitPaxosItem(sessionId); err != nil {
-		d.logger.Warn("failed to commit paxos item", zap.Error(err))
-	}
-
-	// update last commit
-	lcm := d.memory.GetBallotNumberBySessionId(sessionId)
-	if lcm != nil && lcm.GetSequence() >= d.memory.GetLastCommittedBallotNumber().GetSequence() {
-		d.memory.SetLastCommittedBallotNumber(lcm)
 	}
 
 	d.logger.Debug(
@@ -242,7 +265,7 @@ func (d DatabaseHandler) Abort(sessionId int) {
 	}
 
 	// get all update logs
-	wals, err := d.storage.RetrieveWALs(sessionId)
+	wals, err := d.storage.GetWALsBySessionId(sessionId)
 	if err != nil {
 		d.logger.Warn("failed to get logs", zap.Error(err))
 		return
