@@ -25,7 +25,6 @@ type PaxosHandler struct {
 	dispatcherNotifyChan chan bool
 	leaderTimerChan      chan bool
 	leaderPingChan       chan bool
-	consensusTimerChan   chan bool
 	csmsChan             chan *packets.Packet
 }
 
@@ -54,7 +53,7 @@ func (p *PaxosHandler) Request(req *database.RequestMsg) {
 	}
 
 	// start consensus timer
-	go p.paxosTimer.ConsensusTimer(req.GetReturnAddress(), int(req.GetTransaction().GetSessionId()))
+	go p.paxosTimer.StartConsensusTimer(req.GetReturnAddress(), int(req.GetTransaction().GetSessionId()))
 
 	// save the accepted val
 	p.memory.SetAcceptedVal(&msg)
@@ -85,7 +84,7 @@ func (p *PaxosHandler) Prepare(req *database.PrepareMsg) {
 	}
 
 	// start consensus timer
-	go p.paxosTimer.ConsensusTimer(req.GetReturnAddress(), int(req.GetTransaction().GetSessionId()))
+	go p.paxosTimer.StartConsensusTimer(req.GetReturnAddress(), int(req.GetTransaction().GetSessionId()))
 
 	// save the accepted val
 	p.memory.SetAcceptedVal(&msg)
@@ -125,7 +124,7 @@ func (p *PaxosHandler) Accepted(msg *paxos.AcceptedMsg) {
 	}
 
 	// stop the consensus timer
-	p.consensusTimerChan <- true
+	p.paxosTimer.FinishConsensusTimer()
 
 	// send commit messages
 	for _, address := range p.memory.GetClusterIPs() {

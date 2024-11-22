@@ -46,12 +46,11 @@ func NewPaxosHandler(
 		dispatcherNotifyChan: channelNotify,
 		leaderTimerChan:      make(chan bool),
 		leaderPingChan:       make(chan bool),
-		consensusTimerChan:   make(chan bool),
 	}
 
 	// create timers
 	lt := timers.NewLeaderTimer(client, logr.Named("leader-timer"), mem, instance.leaderPingChan, instance.leaderTimerChan)
-	instance.paxosTimer = timers.NewPaxosTimer(client, logr.Named("paxos-timer"), mem, instance.consensusTimerChan, instance.dispatcherNotifyChan)
+	instance.paxosTimer = timers.NewPaxosTimer(client, logr.Named("paxos-timer"), mem, instance.dispatcherNotifyChan)
 
 	// start the leader timer and leader pinger
 	go lt.LeaderTimer()

@@ -21,7 +21,7 @@ type PaxosTimer struct {
 }
 
 // consensusTimers starts a consensus timer and if it hits timeout it will generate a timeout message.
-func (p *PaxosTimer) ConsensusTimer(ra string, sessionId int) {
+func (p *PaxosTimer) StartConsensusTimer(ra string, sessionId int) {
 	// create a new timer and start it
 	timer := time.NewTimer(5 * time.Second)
 
@@ -40,4 +40,9 @@ func (p *PaxosTimer) ConsensusTimer(ra string, sessionId int) {
 		// accept next request
 		p.dispatcherNotifyChan <- true
 	}
+}
+
+// FinishConsensusTimer sends a notify signal to the consensus timer channel.
+func (p *PaxosTimer) FinishConsensusTimer() {
+	p.consensusTimerChan <- true
 }

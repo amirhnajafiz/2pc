@@ -28,14 +28,13 @@ func NewPaxosTimer(
 	client *client.Client,
 	logger *zap.Logger,
 	memory *memory.SharedMemory,
-	consensusTimerChan chan bool,
 	dispatcherNotifyChan chan bool,
 ) *PaxosTimer {
 	return &PaxosTimer{
 		client:               client,
 		logger:               logger,
 		memory:               memory,
-		consensusTimerChan:   consensusTimerChan,
+		consensusTimerChan:   make(chan bool),
 		dispatcherNotifyChan: dispatcherNotifyChan,
 	}
 }
