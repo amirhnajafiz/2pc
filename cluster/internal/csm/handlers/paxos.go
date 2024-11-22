@@ -1,13 +1,11 @@
 package handlers
 
 import (
-	"time"
-
+	"github.com/F24-CSE535/2pc/cluster/internal/csm/timers"
 	"github.com/F24-CSE535/2pc/cluster/internal/grpc/client"
 	"github.com/F24-CSE535/2pc/cluster/internal/memory"
 	"github.com/F24-CSE535/2pc/cluster/internal/storage"
 	"github.com/F24-CSE535/2pc/cluster/internal/utils"
-	"github.com/F24-CSE535/2pc/cluster/pkg/enums"
 	"github.com/F24-CSE535/2pc/cluster/pkg/models"
 	"github.com/F24-CSE535/2pc/cluster/pkg/packets"
 	"github.com/F24-CSE535/2pc/cluster/pkg/rpc/database"
@@ -18,101 +16,17 @@ import (
 
 // PaxosHandler contains methods to perform paxos consensus protocol logic.
 type PaxosHandler struct {
-	client  *client.Client
-	logger  *zap.Logger
-	memory  *memory.SharedMemory
-	storage *storage.Database
+	client     *client.Client
+	logger     *zap.Logger
+	memory     *memory.SharedMemory
+	storage    *storage.Database
+	paxosTimer *timers.PaxosTimer
 
-	channel chan *packets.Packet
-
-	notify    chan bool
-	timer     chan bool
-	leader    chan bool
-	consensus chan bool
-}
-
-// leader timer is a go-routine that waits on packets from the leader.
-// if it does not get enough responses in time, it will create a leader timeout packet.
-func (p *PaxosHandler) leaderTimer() {
-	// create a new timer and start it
-	timer := time.NewTimer(2 * time.Second)
-
-	// leader timer while-loop
-	for {
-		// stop the timer if we are leader
-		if p.memory.GetLeader() == p.memory.GetNodeName() {
-			timer.Stop()
-		}
-
-		select {
-		case value := <-p.timer:
-			if value {
-				p.logger.Debug("accepting new leader", zap.String("current leader", p.memory.GetLeader()))
-				timer.Reset(2 * time.Second)
-			} else {
-				timer.Stop()
-			}
-		case <-timer.C:
-			// the node itself becomes the leader
-			p.logger.Debug("leader timeout", zap.String("current leader", p.memory.GetLeader()))
-			p.memory.SetLeader(p.memory.GetNodeName())
-			p.leader <- true
-		}
-	}
-}
-
-// leaderPinger starts pinging other servers until it gets stop by a better leader.
-func (p *PaxosHandler) leaderPinger() {
-	// create a new timer and start it
-	timer := time.NewTimer(5 * time.Second)
-
-	// leader pinger while-loop
-	for {
-		// stop the timer if we are not leader
-		if p.memory.GetLeader() != p.memory.GetNodeName() {
-			timer.Stop()
-		}
-
-		select {
-		case value := <-p.leader:
-			if value {
-				timer.Reset(5 * time.Second)
-			} else {
-				timer.Stop()
-			}
-		case <-timer.C:
-			// send a ping request to everyone
-			for _, address := range p.memory.GetClusterIPs() {
-				if err := p.client.Ping(address, p.memory.GetLastCommittedBallotNumber()); err != nil {
-					p.logger.Warn("failed to send ping message", zap.Error(err), zap.String("to", address))
-				}
-			}
-
-			timer.Reset(5 * time.Second)
-		}
-	}
-}
-
-// consensusTimers starts a consensus timer and if it hits timeout it will generate a timeout message.
-func (p *PaxosHandler) consensusTimer(ra string, sessionId int) {
-	// create a new timer and start it
-	timer := time.NewTimer(5 * time.Second)
-
-	select {
-	case <-p.consensus:
-		timer.Stop()
-	case <-timer.C:
-		// close everything and reply with timeout
-		p.memory.ResetAcceptedMessages()
-		p.logger.Info("consensus timeout", zap.Int("session id", sessionId))
-
-		if err := p.client.Reply(ra, enums.RespConsensusFailed, sessionId); err != nil {
-			p.logger.Warn("failed to send reply message", zap.Error(err), zap.String("to", ra))
-		}
-
-		// accept next request
-		p.notify <- true
-	}
+	dispatcherNotifyChan chan bool
+	leaderTimerChan      chan bool
+	leaderPingChan       chan bool
+	consensusTimerChan   chan bool
+	csmsChan             chan *packets.Packet
 }
 
 // Request accepts a database request and converts it to paxos request.
@@ -140,7 +54,7 @@ func (p *PaxosHandler) Request(req *database.RequestMsg) {
 	}
 
 	// start consensus timer
-	go p.consensusTimer(req.GetReturnAddress(), int(req.GetTransaction().GetSessionId()))
+	go p.paxosTimer.ConsensusTimer(req.GetReturnAddress(), int(req.GetTransaction().GetSessionId()))
 
 	// save the accepted val
 	p.memory.SetAcceptedVal(&msg)
@@ -171,7 +85,7 @@ func (p *PaxosHandler) Prepare(req *database.PrepareMsg) {
 	}
 
 	// start consensus timer
-	go p.consensusTimer(req.GetReturnAddress(), int(req.GetTransaction().GetSessionId()))
+	go p.paxosTimer.ConsensusTimer(req.GetReturnAddress(), int(req.GetTransaction().GetSessionId()))
 
 	// save the accepted val
 	p.memory.SetAcceptedVal(&msg)
@@ -211,7 +125,7 @@ func (p *PaxosHandler) Accepted(msg *paxos.AcceptedMsg) {
 	}
 
 	// stop the consensus timer
-	p.consensus <- true
+	p.consensusTimerChan <- true
 
 	// send commit messages
 	for _, address := range p.memory.GetClusterIPs() {
@@ -233,8 +147,8 @@ func (p *PaxosHandler) Accepted(msg *paxos.AcceptedMsg) {
 	}
 
 	// send the commit to our own channel and notify the dispatcher
-	p.channel <- &pkt
-	p.notify <- true
+	p.csmsChan <- &pkt
+	p.dispatcherNotifyChan <- true
 }
 
 // Commit gets a commit message and creates a new request into the system.
@@ -277,7 +191,7 @@ func (p *PaxosHandler) Commit(msg *paxos.CommitMsg) {
 	// save the ballot-number in memory
 	p.memory.SetPotentialBallotNumber(int(msg.GetAcceptedValue().GetRequest().GetSessionId()), msg.GetAcceptedNumber())
 
-	p.channel <- &pkt
+	p.csmsChan <- &pkt
 }
 
 // Ping gets a ping message, and accepts it if the leader is better.
@@ -289,14 +203,14 @@ func (p *PaxosHandler) Ping(msg *paxos.PingMsg) {
 
 	// reset the timer
 	p.memory.SetLeader(msg.GetNodeId())
-	p.timer <- true
-	p.leader <- false
+	p.leaderTimerChan <- true
+	p.leaderPingChan <- false
 
 	// check the last committed message
 	diff := p.memory.GetLastCommittedBallotNumber().GetSequence() - msg.GetLastCommitted().GetSequence()
 	if diff > 0 {
 		// sync the leader by generating a pong message
-		p.channel <- &packets.Packet{
+		p.csmsChan <- &packets.Packet{
 			Label: packets.PktPaxosPong,
 			Payload: &paxos.PongMsg{
 				LastCommitted: msg.GetLastCommitted(),

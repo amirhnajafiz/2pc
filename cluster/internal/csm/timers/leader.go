@@ -1,0 +1,81 @@
+package timers
+
+import (
+	"time"
+
+	"github.com/F24-CSE535/2pc/cluster/internal/grpc/client"
+	"github.com/F24-CSE535/2pc/cluster/internal/memory"
+	"go.uber.org/zap"
+)
+
+// LeaderTimer is a struct for managing leader timeout and leader ping operations.
+type LeaderTimer struct {
+	client *client.Client
+	logger *zap.Logger
+	memory *memory.SharedMemory
+
+	leaderPingChan  chan bool
+	leaderTimerChan chan bool
+}
+
+// leader timer is a go-routine that waits on packets from the leader.
+// if it does not get enough responses in time, it will create a leader timeout packet.
+func (p *LeaderTimer) LeaderTimer() {
+	// create a new timer and start it
+	timer := time.NewTimer(2 * time.Second)
+
+	// leader timer while-loop
+	for {
+		// stop the timer if we are leader
+		if p.memory.GetLeader() == p.memory.GetNodeName() {
+			timer.Stop()
+		}
+
+		select {
+		case value := <-p.leaderTimerChan:
+			if value {
+				p.logger.Debug("accepting new leader", zap.String("current leader", p.memory.GetLeader()))
+				timer.Reset(2 * time.Second)
+			} else {
+				timer.Stop()
+			}
+		case <-timer.C:
+			// the node itself becomes the leader
+			p.logger.Debug("leader timeout", zap.String("current leader", p.memory.GetLeader()))
+			p.memory.SetLeader(p.memory.GetNodeName())
+			p.leaderPingChan <- true
+		}
+	}
+}
+
+// leaderPinger starts pinging other servers until it gets stop by a better leader.
+func (p *LeaderTimer) LeaderPinger() {
+	// create a new timer and start it
+	timer := time.NewTimer(5 * time.Second)
+
+	// leader pinger while-loop
+	for {
+		// stop the timer if we are not leader
+		if p.memory.GetLeader() != p.memory.GetNodeName() {
+			timer.Stop()
+		}
+
+		select {
+		case value := <-p.leaderPingChan:
+			if value {
+				timer.Reset(5 * time.Second)
+			} else {
+				timer.Stop()
+			}
+		case <-timer.C:
+			// send a ping request to everyone
+			for _, address := range p.memory.GetClusterIPs() {
+				if err := p.client.Ping(address, p.memory.GetLastCommittedBallotNumber()); err != nil {
+					p.logger.Warn("failed to send ping message", zap.Error(err), zap.String("to", address))
+				}
+			}
+
+			timer.Reset(5 * time.Second)
+		}
+	}
+}

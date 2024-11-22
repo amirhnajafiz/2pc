@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/F24-CSE535/2pc/cluster/internal/csm/timers"
 	"github.com/F24-CSE535/2pc/cluster/internal/grpc/client"
 	"github.com/F24-CSE535/2pc/cluster/internal/lock"
 	"github.com/F24-CSE535/2pc/cluster/internal/memory"
@@ -37,20 +38,24 @@ func NewPaxosHandler(
 	st *storage.Database,
 ) *PaxosHandler {
 	instance := &PaxosHandler{
-		memory:    mem,
-		storage:   st,
-		channel:   channel,
-		notify:    channelNotify,
-		logger:    logr,
-		client:    client,
-		timer:     make(chan bool),
-		leader:    make(chan bool),
-		consensus: make(chan bool),
+		memory:               mem,
+		storage:              st,
+		logger:               logr,
+		client:               client,
+		csmsChan:             channel,
+		dispatcherNotifyChan: channelNotify,
+		leaderTimerChan:      make(chan bool),
+		leaderPingChan:       make(chan bool),
+		consensusTimerChan:   make(chan bool),
 	}
 
-	// start the leader timer
-	go instance.leaderTimer()
-	go instance.leaderPinger()
+	// create timers
+	lt := timers.NewLeaderTimer(client, logr.Named("leader-timer"), mem, instance.leaderPingChan, instance.leaderTimerChan)
+	instance.paxosTimer = timers.NewPaxosTimer(client, logr.Named("paxos-timer"), mem, instance.consensusTimerChan, instance.dispatcherNotifyChan)
+
+	// start the leader timer and leader pinger
+	go lt.LeaderTimer()
+	go lt.LeaderPinger()
 
 	return instance
 }
