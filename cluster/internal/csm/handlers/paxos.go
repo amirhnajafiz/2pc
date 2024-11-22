@@ -53,7 +53,7 @@ func (p *PaxosHandler) leaderTimer() {
 				timer.Stop()
 			}
 		case <-timer.C:
-			// send a leader timeout packet
+			// the node itself becomes the leader and sends a ping request to everyone
 			timer.Stop()
 		}
 	}
@@ -230,14 +230,51 @@ func (p *PaxosHandler) Commit(msg *paxos.CommitMsg) {
 	p.channel <- &pkt
 }
 
+// Ping gets a ping message, and accepts it if the leader is better.
 func (p *PaxosHandler) Ping(msg *paxos.PingMsg) {
+	// leader is not good enough
+	if msg.GetNodeId() < p.memory.GetNodeName() {
+		return
+	}
 
+	// reset the timer
+	p.timer <- true
+	p.memory.SetLeader(msg.GetNodeId())
+
+	// check the last committed message
+	diff := p.memory.GetLastCommittedBallotNumber().GetSequence() - msg.GetLastCommitted().GetSequence()
+	if diff > 0 {
+		// sync the leader by calling sync
+	} else if diff < 0 {
+		// demand a sync by calling pong
+	}
 }
 
+// Pong gets a pong message and syncs the follower.
 func (p *PaxosHandler) Pong(msg *paxos.PongMsg) {
+	// get paxos items
+	_, err := p.storage.GetPaxosItems(int(msg.GetLastCommitted().GetSequence()))
+	if err != nil {
+		p.logger.Warn("failed to get paxos items", zap.Error(err))
+	}
 
+	// sync the follower by calling sync
 }
 
+// Sync gets a sync message and syncs the node.
 func (p *PaxosHandler) Sync(msg *paxos.SyncMsg) {
+	// drop the old sync messages
+	if msg.GetLastCommitted().GetSequence() < p.memory.GetLastCommittedBallotNumber().GetSequence() {
+		return
+	}
 
+	// in a loop, update the clients
+	for _, item := range msg.GetItems() {
+		if err := p.storage.UpdateClientBalance(item.GetRecord(), int(item.GetValue()), false); err != nil {
+			p.logger.Warn("failed to update client in sync", zap.Error(err), zap.String("client", item.GetRecord()))
+		}
+	}
+
+	// update our last committed
+	p.memory.ResetLastCommittedBallotNumber(msg.GetLastCommitted())
 }

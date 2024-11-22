@@ -22,7 +22,7 @@ func NewSharedMemory(leader, nm, cn string, iptable map[string]string) *SharedMe
 		clusterName:                     cn,
 		iptable:                         iptable,
 		potentialCommittedBallotNumbers: make(map[int]*paxos.BallotNumber),
-		lastCommittedBallotNumber:       nil,
+		lastCommittedBallotNumber:       &paxos.BallotNumber{Sequence: 0, NodeId: nm},
 	}
 
 	instance.SetClusterIPs()
