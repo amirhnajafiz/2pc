@@ -14,4 +14,7 @@ const (
 	PktPaxosAccept
 	PktPaxosAccepted
 	PktPaxosCommit
+	PktPaxosPing
+	PktPaxosPong
+	PktPaxosSync
 )

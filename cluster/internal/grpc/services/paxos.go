@@ -36,3 +36,24 @@ func (p *PaxosService) Commit(_ context.Context, msg *paxos.CommitMsg) (*emptypb
 
 	return &emptypb.Empty{}, nil
 }
+
+// Ping RPC creates a new ping packet and sends it to the CSMs.
+func (p *PaxosService) Ping(_ context.Context, msg *paxos.PingMsg) (*emptypb.Empty, error) {
+	p.Channel <- &packets.Packet{Label: packets.PktPaxosPing, Payload: msg}
+
+	return &emptypb.Empty{}, nil
+}
+
+// Pong RPC creates a new pong packet and sends it to the CSMs.
+func (p *PaxosService) Pong(_ context.Context, msg *paxos.PongMsg) (*emptypb.Empty, error) {
+	p.Channel <- &packets.Packet{Label: packets.PktPaxosPong, Payload: msg}
+
+	return &emptypb.Empty{}, nil
+}
+
+// Sync RPC creates a new sync packet and sends it to the CSMs.
+func (p *PaxosService) Sync(_ context.Context, msg *paxos.SyncMsg) (*emptypb.Empty, error) {
+	p.Channel <- &packets.Packet{Label: packets.PktPaxosSync, Payload: msg}
+
+	return &emptypb.Empty{}, nil
+}

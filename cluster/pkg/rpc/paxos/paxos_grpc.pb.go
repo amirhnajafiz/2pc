@@ -22,6 +22,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	Paxos_Ping_FullMethodName     = "/paxos.Paxos/Ping"
 	Paxos_Pong_FullMethodName     = "/paxos.Paxos/Pong"
+	Paxos_Sync_FullMethodName     = "/paxos.Paxos/Sync"
 	Paxos_Accept_FullMethodName   = "/paxos.Paxos/Accept"
 	Paxos_Accepted_FullMethodName = "/paxos.Paxos/Accepted"
 	Paxos_Commit_FullMethodName   = "/paxos.Paxos/Commit"
@@ -35,6 +36,7 @@ const (
 type PaxosClient interface {
 	Ping(ctx context.Context, in *PingMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Pong(ctx context.Context, in *PongMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Sync(ctx context.Context, in *SyncMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Accept(ctx context.Context, in *AcceptMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Accepted(ctx context.Context, in *AcceptedMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Commit(ctx context.Context, in *CommitMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -62,6 +64,16 @@ func (c *paxosClient) Pong(ctx context.Context, in *PongMsg, opts ...grpc.CallOp
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, Paxos_Pong_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *paxosClient) Sync(ctx context.Context, in *SyncMsg, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, Paxos_Sync_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -106,6 +118,7 @@ func (c *paxosClient) Commit(ctx context.Context, in *CommitMsg, opts ...grpc.Ca
 type PaxosServer interface {
 	Ping(context.Context, *PingMsg) (*emptypb.Empty, error)
 	Pong(context.Context, *PongMsg) (*emptypb.Empty, error)
+	Sync(context.Context, *SyncMsg) (*emptypb.Empty, error)
 	Accept(context.Context, *AcceptMsg) (*emptypb.Empty, error)
 	Accepted(context.Context, *AcceptedMsg) (*emptypb.Empty, error)
 	Commit(context.Context, *CommitMsg) (*emptypb.Empty, error)
@@ -124,6 +137,9 @@ func (UnimplementedPaxosServer) Ping(context.Context, *PingMsg) (*emptypb.Empty,
 }
 func (UnimplementedPaxosServer) Pong(context.Context, *PongMsg) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Pong not implemented")
+}
+func (UnimplementedPaxosServer) Sync(context.Context, *SyncMsg) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Sync not implemented")
 }
 func (UnimplementedPaxosServer) Accept(context.Context, *AcceptMsg) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Accept not implemented")
@@ -187,6 +203,24 @@ func _Paxos_Pong_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PaxosServer).Pong(ctx, req.(*PongMsg))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Paxos_Sync_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SyncMsg)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaxosServer).Sync(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Paxos_Sync_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaxosServer).Sync(ctx, req.(*SyncMsg))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -259,6 +293,10 @@ var Paxos_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Pong",
 			Handler:    _Paxos_Pong_Handler,
+		},
+		{
+			MethodName: "Sync",
+			Handler:    _Paxos_Sync_Handler,
 		},
 		{
 			MethodName: "Accept",
