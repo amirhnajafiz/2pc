@@ -27,11 +27,6 @@ func (s *SharedMemory) GetFromIPTable(key string) string {
 	return s.iptable[key]
 }
 
-// GetLastCommittedBallotNumber returns the last committed ballot-number.
-func (s *SharedMemory) GetLastCommittedBallotNumber() *paxos.BallotNumber {
-	return s.lastCommitted
-}
-
 // GetBallotNumber returns the node's ballot-number.
 func (s *SharedMemory) GetBallotNumber() *paxos.BallotNumber {
 	return s.ballotNumber
@@ -49,12 +44,7 @@ func (s *SharedMemory) GetAcceptedVal() *paxos.AcceptMsg {
 
 // GetBallotNumberBySessionId pops a ballot-number from ballot-numbers map.
 func (s *SharedMemory) GetBallotNumberBySessionId(sessionId int) *paxos.BallotNumber {
-	if value, ok := s.ballotNumbersMap[sessionId]; ok {
-		delete(s.ballotNumbersMap, sessionId)
-		return value
-	}
-
-	return nil
+	return s.sessionIdsBallotNumbers[sessionId]
 }
 
 // IsAcceptedMessagesEmpty returns true if accepted messages is nil.

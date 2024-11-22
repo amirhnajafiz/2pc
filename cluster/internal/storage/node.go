@@ -26,7 +26,7 @@ func (d *Database) InsertClusterShard(shard []*models.ClientShard) error {
 }
 
 // IsCollectionEmpty returns true if the collection is empty.
-func (d *Database) IsCollectionEmpty() (bool, error) {
+func (d *Database) IsClientsCollectionEmpty() (bool, error) {
 	// count the number of documents in the collection
 	count, err := d.clientsCollection.CountDocuments(context.TODO(), bson.D{})
 	if err != nil {
@@ -78,7 +78,7 @@ func (d *Database) InsertWAL(log *models.Log) error {
 }
 
 // InsertBatchWALs into the database.
-func (d *Database) InsertBatchWAL(logs []*models.Log) error {
+func (d *Database) InsertBatchWALs(logs []*models.Log) error {
 	// convert log model to interface
 	records := make([]interface{}, 0)
 	for _, item := range logs {
@@ -90,8 +90,8 @@ func (d *Database) InsertBatchWAL(logs []*models.Log) error {
 	return err
 }
 
-// RetrieveWALs gets a sessionId and returns the logs for that session.
-func (d *Database) RetrieveWALs(sessionId int) ([]*models.Log, error) {
+// GetWALsBySessionId gets a sessionId and returns the logs for that session.
+func (d *Database) GetWALsBySessionId(sessionId int) ([]*models.Log, error) {
 	// create a filter for the specified log
 	filter := bson.M{
 		"session_id": sessionId,
@@ -136,7 +136,7 @@ func (d *Database) GetWALs() ([]*models.Log, error) {
 }
 
 // GetCommitteds returns all committed WALs.
-func (d *Database) GetCommitteds() ([]*models.Log, error) {
+func (d *Database) GetCommittedWALs() ([]*models.Log, error) {
 	// create a filter for the specified log
 	filter := bson.M{
 		"message": enums.WALCommit,
@@ -151,55 +151,6 @@ func (d *Database) GetCommitteds() ([]*models.Log, error) {
 
 	// decode the results into a slice of Logs structs
 	var results []*models.Log
-	if err = cursor.All(context.TODO(), &results); err != nil {
-		return nil, err
-	}
-
-	return results, nil
-}
-
-// InsertPaxosItem stores a paxos item inside the paxos items collection.
-func (d *Database) InsertPaxosItem(pi *models.PaxosItem) error {
-	_, err := d.paxosItemsCollection.InsertOne(context.TODO(), pi)
-
-	return err
-}
-
-// CommitPaxosItem gets a sessionId and updates a paxos item status.
-func (d *Database) CommitPaxosItem(sessionId int) error {
-	// create a filer
-	filter := bson.M{
-		"session_id": sessionId,
-	}
-
-	// create an update
-	update := bson.D{{Key: "$set", Value: bson.D{{Key: "is_committed", Value: true}}}}
-
-	// perform the update query
-	_, err := d.paxosItemsCollection.UpdateMany(context.TODO(), filter, update)
-
-	return err
-}
-
-// GetPaxosItems returns paxos items that are greater than the given ballot-number.
-func (d *Database) GetPaxosItems(from int) ([]*models.PaxosItem, error) {
-	// create a filter for ballot-numbers greater than from
-	filter := bson.D{
-		{Key: "$and", Value: bson.A{
-			bson.D{{Key: "ballot_number_num", Value: bson.D{{Key: "$gt", Value: from}}}},
-			bson.D{{Key: "is_committed", Value: true}},
-		}},
-	}
-
-	// find all documents that match the filter
-	cursor, err := d.paxosItemsCollection.Find(context.TODO(), filter)
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(context.TODO())
-
-	// decode the results into a slice of PaxosItem structs
-	var results []*models.PaxosItem
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		return nil, err
 	}

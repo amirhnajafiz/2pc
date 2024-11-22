@@ -30,13 +30,8 @@ func (s *SharedMemory) SetLeader(leader string) {
 }
 
 // SetPotentialBallotNumber adds a new ballot-number to the potential list.
-func (s *SharedMemory) AppendBallotNumber(sessionId int, bn *paxos.BallotNumber) {
-	s.ballotNumbersMap[sessionId] = bn
-}
-
-// SetLastCommittedBallotNumber updates the last committed ballot-number.
-func (s *SharedMemory) SetLastCommittedBallotNumber(bn *paxos.BallotNumber) {
-	s.lastCommitted = bn
+func (s *SharedMemory) SetSessionIdBallotNumber(sessionId int, bn *paxos.BallotNumber) {
+	s.sessionIdsBallotNumbers[sessionId] = bn
 }
 
 // SetAcceptedMessages initializes the accepted messages.

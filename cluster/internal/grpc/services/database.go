@@ -85,7 +85,7 @@ func (d *DatabaseService) PrintLogs(_ *emptypb.Empty, stream database.Database_P
 
 // PrintDatastore returns all committed transactions inside this node.
 func (d *DatabaseService) PrintDatastore(_ *emptypb.Empty, stream database.Database_PrintDatastoreServer) error {
-	wals, err := d.Storage.GetCommitteds()
+	wals, err := d.Storage.GetCommittedWALs()
 	if err != nil {
 		return fmt.Errorf("database failed: %v", err)
 	}
