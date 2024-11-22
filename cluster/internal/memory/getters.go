@@ -1,5 +1,7 @@
 package memory
 
+import "github.com/F24-CSE535/2pc/cluster/pkg/rpc/paxos"
+
 // GetLeader returns the current leader.
 func (s *SharedMemory) GetLeader() string {
 	return s.leader
@@ -23,4 +25,9 @@ func (s *SharedMemory) GetClusterIPs() []string {
 // GetFromIPTable returns an address from iptable.
 func (s *SharedMemory) GetFromIPTable(key string) string {
 	return s.iptable[key]
+}
+
+// GetLastCommittedBallotNumber returns the last committed ballot-number.
+func (s *SharedMemory) GetLastCommittedBallotNumber() *paxos.BallotNumber {
+	return s.lastCommittedBallotNumber
 }

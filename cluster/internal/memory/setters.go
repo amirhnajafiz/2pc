@@ -7,6 +7,7 @@ import (
 	"github.com/F24-CSE535/2pc/cluster/pkg/rpc/paxos"
 )
 
+// SetClusterIPs is used to extract the ip addresses of nodes inside a cluster.
 func (s *SharedMemory) SetClusterIPs() {
 	// split the cluster endpoints by ':'
 	parts := strings.Split(s.iptable[fmt.Sprintf("E%s", s.clusterName)], ":")
@@ -41,4 +42,9 @@ func (s *SharedMemory) SetLastCommittedBallotNumber(sessionId int) {
 			delete(s.potentialCommittedBallotNumbers, sessionId)
 		}
 	}
+}
+
+// ResetLastCommittedBallotNumber updates the last committed ballot-number.
+func (s *SharedMemory) ResetLastCommittedBallotNumber(bn *paxos.BallotNumber) {
+	s.lastCommittedBallotNumber = bn
 }
