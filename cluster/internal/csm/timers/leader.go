@@ -94,7 +94,7 @@ func (p *LeaderTimer) leaderPinger() {
 		case <-timer.C:
 			// send a ping request to everyone
 			for _, address := range p.memory.GetClusterIPs() {
-				if err := p.client.Ping(address, p.memory.GetLastCommittedBallotNumber()); err != nil {
+				if err := p.client.Ping(address, p.memory.GetBallotNumber()); err != nil {
 					p.logger.Warn("failed to send ping message", zap.Error(err), zap.String("to", address))
 				}
 			}
