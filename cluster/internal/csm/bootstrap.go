@@ -44,6 +44,7 @@ func (m *Manager) Initialize(logr *zap.Logger, replicas int) {
 		client.NewClient(m.Memory.GetNodeName()),
 		logr.Named("csm-paxos-handler"),
 		m.Memory,
+		m.Storage,
 	)
 
 	for i := 0; i < replicas; i++ {

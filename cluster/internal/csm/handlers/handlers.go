@@ -35,9 +35,11 @@ func NewPaxosHandler(
 	client *client.Client,
 	logr *zap.Logger,
 	mem *memory.SharedMemory,
+	st *storage.Database,
 ) *PaxosHandler {
 	return &PaxosHandler{
 		memory:      mem,
+		storage:     st,
 		channel:     channel,
 		notify:      channelNotify,
 		logger:      logr,

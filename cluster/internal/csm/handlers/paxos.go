@@ -3,7 +3,9 @@ package handlers
 import (
 	"github.com/F24-CSE535/2pc/cluster/internal/grpc/client"
 	"github.com/F24-CSE535/2pc/cluster/internal/memory"
+	"github.com/F24-CSE535/2pc/cluster/internal/storage"
 	"github.com/F24-CSE535/2pc/cluster/internal/utils"
+	"github.com/F24-CSE535/2pc/cluster/pkg/models"
 	"github.com/F24-CSE535/2pc/cluster/pkg/packets"
 	"github.com/F24-CSE535/2pc/cluster/pkg/rpc/database"
 	"github.com/F24-CSE535/2pc/cluster/pkg/rpc/paxos"
@@ -13,9 +15,10 @@ import (
 
 // PaxosHandler contains methods to perform paxos consensus protocol logic.
 type PaxosHandler struct {
-	client *client.Client
-	logger *zap.Logger
-	memory *memory.SharedMemory
+	client  *client.Client
+	logger  *zap.Logger
+	memory  *memory.SharedMemory
+	storage *storage.Database
 
 	channel chan *packets.Packet
 	notify  chan bool
@@ -149,6 +152,19 @@ func (p *PaxosHandler) Commit(msg *paxos.CommitMsg) {
 			Transaction:   utils.ConvertPaxosRequestToDatabaseTransaction(p.acceptedVal.GetRequest()),
 			ReturnAddress: p.acceptedVal.Request.GetReturnAddress(),
 		}
+	}
+
+	// save the paxos item into storage
+	if err := p.storage.InsertPaxosItem(&models.PaxosItem{
+		BallotNumberNum: int(msg.GetAcceptedNumber().GetSequence()),
+		BallotNumberPid: msg.GetAcceptedNumber().GetNodeId(),
+		Client:          msg.GetAcceptedValue().GetRequest().GetClient(),
+		Sender:          msg.GetAcceptedValue().GetRequest().GetSender(),
+		Receiver:        msg.GetAcceptedValue().GetRequest().GetReceiver(),
+		Amount:          int(msg.GetAcceptedValue().GetRequest().GetAmount()),
+		SessionId:       int(msg.GetAcceptedValue().GetRequest().GetSessionId()),
+	}); err != nil {
+		p.logger.Warn("failed to store paxos item", zap.Error(err))
 	}
 
 	p.channel <- &pkt
