@@ -63,8 +63,16 @@ func (d DatabaseHandler) Request(ra string, trx *database.TransactionMsg) {
 
 		response = enums.RespOK
 
+		// commit the paxos item
+		if err := d.storage.CommitPaxosItem(sessionId); err != nil {
+			d.logger.Warn("failed to commit paxos item", zap.Error(err))
+		}
+
+		// update last commit
+		d.memory.SetLastCommittedBallotNumber(sessionId)
+
 		d.logger.Debug(
-			"transaction submitted",
+			"transaction committed",
 			zap.Int64("session id", trx.GetSessionId()),
 		)
 	} else {
@@ -74,11 +82,6 @@ func (d DatabaseHandler) Request(ra string, trx *database.TransactionMsg) {
 			"client balance is not enough to process the transaction",
 			zap.Int64("session id", trx.GetSessionId()),
 		)
-	}
-
-	// commit the paxos item
-	if err := d.storage.CommitPaxosItem(sessionId); err != nil {
-		d.logger.Warn("failed to commit paxos item", zap.Error(err))
 	}
 
 	// call the reply RPC on client, if the node is the leader
@@ -205,8 +208,11 @@ func (d DatabaseHandler) Commit(msg *database.CommitMsg) {
 		d.logger.Warn("failed to commit paxos item", zap.Error(err))
 	}
 
+	// update last commit
+	d.memory.SetLastCommittedBallotNumber(sessionId)
+
 	d.logger.Debug(
-		"transaction submitted",
+		"transaction committed",
 		zap.Int("session id", sessionId),
 	)
 

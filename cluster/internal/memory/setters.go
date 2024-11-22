@@ -3,6 +3,8 @@ package memory
 import (
 	"fmt"
 	"strings"
+
+	"github.com/F24-CSE535/2pc/cluster/pkg/rpc/paxos"
 )
 
 func (s *SharedMemory) SetClusterIPs() {
@@ -24,4 +26,19 @@ func (s *SharedMemory) SetClusterIPs() {
 // SetLeader updates the current leader id.
 func (s *SharedMemory) SetLeader(leader string) {
 	s.leader = leader
+}
+
+// SetPotentialBallotNumber adds a new ballot-number to the potential list.
+func (s *SharedMemory) SetPotentialBallotNumber(sessionId int, bn *paxos.BallotNumber) {
+	s.potentialCommittedBallotNumbers[sessionId] = bn
+}
+
+// SetLastCommittedBallotNumber checks the potential ballot-numbers to update the last committed ballot-number.
+func (s *SharedMemory) SetLastCommittedBallotNumber(sessionId int) {
+	if value, ok := s.potentialCommittedBallotNumbers[sessionId]; ok {
+		if s.lastCommittedBallotNumber == nil || s.lastCommittedBallotNumber.GetSequence() < value.GetSequence() {
+			s.lastCommittedBallotNumber = value
+			delete(s.potentialCommittedBallotNumbers, sessionId)
+		}
+	}
 }

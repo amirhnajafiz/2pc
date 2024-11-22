@@ -167,5 +167,8 @@ func (p *PaxosHandler) Commit(msg *paxos.CommitMsg) {
 		p.logger.Warn("failed to store paxos item", zap.Error(err))
 	}
 
+	// save the ballot-number in memory
+	p.memory.SetPotentialBallotNumber(int(msg.GetAcceptedValue().GetRequest().GetSessionId()), msg.GetAcceptedNumber())
+
 	p.channel <- &pkt
 }
