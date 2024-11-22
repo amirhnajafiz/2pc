@@ -22,25 +22,31 @@ func (c *ConsensusStateMachine) Start() {
 
 		// case on packet label
 		switch pkt.Label {
-		case packets.PktDatabaseRequest:
+		case packets.PktDatabaseRequest: // comes from the paxos handler
 			msg := pkt.Payload.(*database.RequestMsg)
 			c.databaseHandler.Request(msg.GetReturnAddress(), msg.GetTransaction())
-		case packets.PktDatabasePrepare:
+		case packets.PktDatabasePrepare: // comes from the paxos handler
 			c.databaseHandler.Prepare(pkt.Payload.(*database.PrepareMsg))
-		case packets.PktDatabaseCommit:
+		case packets.PktDatabaseCommit: // comes from the gRPC
 			c.databaseHandler.Commit(pkt.Payload.(*database.CommitMsg))
-		case packets.PktDatabaseAbort:
+		case packets.PktDatabaseAbort: // comes from the gRPC
 			c.databaseHandler.Abort(int(pkt.Payload.(*database.AbortMsg).GetSessionId()))
-		case packets.PktPaxosRequest:
+		case packets.PktPaxosRequest: // comes from the gRPC
 			c.paxosHandler.Request(pkt.Payload.(*database.RequestMsg))
-		case packets.PktPaxosPrepare:
+		case packets.PktPaxosPrepare: // comes from the gRPC
 			c.paxosHandler.Prepare(pkt.Payload.(*database.PrepareMsg))
-		case packets.PktPaxosAccept:
+		case packets.PktPaxosAccept: // comes from the gRPC
 			c.paxosHandler.Accept(pkt.Payload.(*paxos.AcceptMsg))
-		case packets.PktPaxosAccepted:
+		case packets.PktPaxosAccepted: // comes from the gRPC
 			c.paxosHandler.Accepted(pkt.Payload.(*paxos.AcceptedMsg))
-		case packets.PktPaxosCommit:
+		case packets.PktPaxosCommit: // comes from the gRPC
 			c.paxosHandler.Commit(pkt.Payload.(*paxos.CommitMsg))
+		case packets.PktPaxosPing: // comes from the gRPC
+			c.paxosHandler.Ping(pkt.Payload.(*paxos.PingMsg))
+		case packets.PktPaxosPong: // comes from both gRPC and paxos handler
+			c.paxosHandler.Pong(pkt.Payload.(*paxos.PongMsg))
+		case packets.PktPaxosSync: // comes from the gRPC
+			c.paxosHandler.Sync(pkt.Payload.(*paxos.SyncMsg))
 		}
 	}
 }
