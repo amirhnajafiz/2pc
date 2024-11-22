@@ -251,7 +251,14 @@ func (p *PaxosHandler) Ping(msg *paxos.PingMsg) {
 	// check the last committed message
 	diff := p.memory.GetLastCommittedBallotNumber().GetSequence() - msg.GetLastCommitted().GetSequence()
 	if diff > 0 {
-		// sync the leader by calling sync
+		// sync the leader by generating a pong message
+		p.channel <- &packets.Packet{
+			Label: packets.PktPaxosPong,
+			Payload: &paxos.PongMsg{
+				LastCommitted: msg.GetLastCommitted(),
+				NodeId:        msg.GetNodeId(),
+			},
+		}
 	} else if diff < 0 {
 		// demand a sync by calling pong
 		if err := p.client.Pong(p.memory.GetFromIPTable(msg.GetNodeId()), p.memory.GetLastCommittedBallotNumber()); err != nil {
