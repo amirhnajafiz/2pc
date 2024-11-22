@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"time"
+
 	"github.com/F24-CSE535/2pc/cluster/internal/grpc/client"
 	"github.com/F24-CSE535/2pc/cluster/internal/memory"
 	"github.com/F24-CSE535/2pc/cluster/internal/storage"
@@ -22,10 +24,65 @@ type PaxosHandler struct {
 
 	channel chan *packets.Packet
 	notify  chan bool
+	timer   chan bool
+	leader  chan bool
 
 	acceptedNum  *paxos.BallotNumber
 	acceptedVal  *paxos.AcceptMsg
 	acceptedMsgs []*paxos.AcceptedMsg
+}
+
+// leader timer is a go-routine that waits on packets from the leader.
+// if it does not get enough responses in time, it will create a leader timeout packet.
+func (p *PaxosHandler) leaderTimer() {
+	// create a new timer and start it
+	timer := time.NewTimer(10 * time.Second)
+
+	// leader timer while-loop
+	for {
+		// stop the timer if we are leader
+		if p.memory.GetLeader() == p.memory.GetNodeName() {
+			timer.Stop()
+		}
+
+		select {
+		case value := <-p.timer:
+			if value {
+				timer.Reset(10 * time.Second)
+			} else {
+				timer.Stop()
+			}
+		case <-timer.C:
+			// send a leader timeout packet
+			timer.Stop()
+		}
+	}
+}
+
+// leaderPinger starts pinging other servers until it gets stop by a better leader.
+func (p *PaxosHandler) leaderPinger() {
+	// create a new timer and start it
+	timer := time.NewTimer(5 * time.Second)
+
+	// leader pinger while-loop
+	for {
+		// stop the timer if we are not leader
+		if p.memory.GetLeader() != p.memory.GetNodeName() {
+			timer.Stop()
+		}
+
+		select {
+		case value := <-p.leader:
+			if value {
+				timer.Reset(5 * time.Second)
+			} else {
+				timer.Stop()
+			}
+		case <-timer.C:
+			// send a ping request to everyone
+			timer.Reset(5 * time.Second)
+		}
+	}
 }
 
 // Request accepts a database request and converts it to paxos request.
@@ -171,4 +228,16 @@ func (p *PaxosHandler) Commit(msg *paxos.CommitMsg) {
 	p.memory.SetPotentialBallotNumber(int(msg.GetAcceptedValue().GetRequest().GetSessionId()), msg.GetAcceptedNumber())
 
 	p.channel <- &pkt
+}
+
+func (p *PaxosHandler) Ping(msg *paxos.PingMsg) {
+
+}
+
+func (p *PaxosHandler) Pong(msg *paxos.PongMsg) {
+
+}
+
+func (p *PaxosHandler) Sync(msg *paxos.SyncMsg) {
+
 }

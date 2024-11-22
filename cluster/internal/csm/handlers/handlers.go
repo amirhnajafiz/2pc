@@ -37,7 +37,7 @@ func NewPaxosHandler(
 	mem *memory.SharedMemory,
 	st *storage.Database,
 ) *PaxosHandler {
-	return &PaxosHandler{
+	instance := &PaxosHandler{
 		memory:      mem,
 		storage:     st,
 		channel:     channel,
@@ -47,4 +47,10 @@ func NewPaxosHandler(
 		acceptedNum: &paxos.BallotNumber{Sequence: 0, NodeId: mem.GetNodeName()},
 		acceptedVal: nil,
 	}
+
+	// start the leader timer
+	go instance.leaderTimer()
+	go instance.leaderPinger()
+
+	return instance
 }
