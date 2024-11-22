@@ -29,7 +29,7 @@ type PaxosHandler struct {
 }
 
 // Request accepts a database request and converts it to paxos request.
-func (p *PaxosHandler) Request(payload interface{}, isPrepare bool) {
+func (p *PaxosHandler) Request(payload interface{}, isCrossShared bool) {
 	// create a list for accepted messages
 	p.memory.SetAcceptedMessages()
 
@@ -40,11 +40,11 @@ func (p *PaxosHandler) Request(payload interface{}, isPrepare bool) {
 	msg := paxos.AcceptMsg{
 		BallotNumber: p.memory.GetBallotNumber(),
 		NodeId:       p.memory.GetNodeName(),
-		CrossShard:   false,
+		CrossShard:   isCrossShared,
 	}
 
 	// set the request based on prepare type
-	if isPrepare {
+	if isCrossShared {
 		msg.Request = utils.ConvertDatabasePrepareToPaxosRequest(payload.(*database.PrepareMsg))
 	} else {
 		msg.Request = utils.ConvertDatabaseRequestToPaxosRequest(payload.(*database.RequestMsg))

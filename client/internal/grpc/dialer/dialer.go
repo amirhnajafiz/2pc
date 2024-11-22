@@ -19,7 +19,7 @@ type Dialer struct {
 
 // connect should be called in the beginning of each method to establish a connection.
 func (d *Dialer) connect(target string) (*grpc.ClientConn, error) {
-	address := d.Nodes[d.Nodes[target]]
+	address := d.Nodes[target]
 
 	conn, err := grpc.NewClient(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -32,7 +32,7 @@ func (d *Dialer) connect(target string) (*grpc.ClientConn, error) {
 // Request accepts a transaction parameters for an inter-shard transaction.
 func (d *Dialer) Request(target, sender, receiver string, amount, sessionId int) error {
 	// base connection
-	conn, err := d.connect(target)
+	conn, err := d.connect(d.Nodes[target])
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func (d *Dialer) Request(target, sender, receiver string, amount, sessionId int)
 // Request accepts a transaction parameters for a cross-shard transaction.
 func (d *Dialer) Prepare(target, client, sender, receiver string, amount, sessionId int) error {
 	// base connection
-	conn, err := d.connect(target)
+	conn, err := d.connect(d.Nodes[target])
 	if err != nil {
 		return err
 	}
@@ -83,7 +83,7 @@ func (d *Dialer) Prepare(target, client, sender, receiver string, amount, sessio
 // Commit accepts a target and sessionId to send a commit message.
 func (d *Dialer) Commit(target string, sessionId int) error {
 	// base connection
-	conn, err := d.connect(target)
+	conn, err := d.connect(d.Nodes[target])
 	if err != nil {
 		return err
 	}
@@ -103,7 +103,7 @@ func (d *Dialer) Commit(target string, sessionId int) error {
 // Abort accepts a target and sessionId to send an abort message.
 func (d *Dialer) Abort(target string, sessionId int) error {
 	// base connection
-	conn, err := d.connect(target)
+	conn, err := d.connect(d.Nodes[target])
 	if err != nil {
 		return err
 	}
@@ -122,7 +122,7 @@ func (d *Dialer) Abort(target string, sessionId int) error {
 // PrintBalance accepts a target and client to return the client balance.
 func (d *Dialer) PrintBalance(target string, client string) (int, error) {
 	// base connection
-	conn, err := d.connect(target)
+	conn, err := d.connect(d.Nodes[target])
 	if err != nil {
 		return 0, err
 	}
