@@ -81,5 +81,7 @@ message LogRsp {
 }
 
 message DatastoreRsp {
-  int64 session_id = 1;
+  string record = 1;
+  int64 value = 2;
+  int64 session_id = 3;
 }

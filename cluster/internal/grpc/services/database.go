@@ -93,6 +93,8 @@ func (d *DatabaseService) PrintDatastore(_ *emptypb.Empty, stream database.Datab
 	// send datastore one by one
 	for _, wal := range wals {
 		if err := stream.Send(&database.DatastoreRsp{
+			Record:    wal.Record,
+			Value:     int64(wal.NewValue),
 			SessionId: int64(wal.SessionId),
 		}); err != nil {
 			return err

@@ -58,23 +58,7 @@ func (m *Manager) PrintDatastore(argc int, argv []string) ([]string, string) {
 		return nil, err.Error()
 	}
 
-	// create sessions records
-	records := make([]string, 0)
-	for _, id := range list {
-		if value, ok := m.cache[id]; ok {
-			records = append(
-				records,
-				fmt.Sprintf(
-					"transaction %d (%s, %s, %d)",
-					value.Id,
-					value.Sender,
-					value.Receiver,
-					value.Amount),
-			)
-		}
-	}
-
-	return records, ""
+	return list, ""
 }
 
 func (m *Manager) Transaction(argc int, argv []string) string {
