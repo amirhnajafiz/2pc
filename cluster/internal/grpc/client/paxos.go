@@ -62,3 +62,63 @@ func (c *Client) Commit(address string, acceptedNum *paxos.BallotNumber, accepte
 
 	return nil
 }
+
+// Ping gets a target and sends a ping message to the target.
+func (c *Client) Ping(address string, lcm *paxos.BallotNumber) error {
+	// base connection
+	conn, err := c.connect(address)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	// call ping RPC
+	if _, err := paxos.NewPaxosClient(conn).Ping(context.Background(), &paxos.PingMsg{
+		LastCommitted: lcm,
+		NodeId:        c.nodeId,
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Pong gets a target and sends a pong message to the target.
+func (c *Client) Pong(address string, lcm *paxos.BallotNumber) error {
+	// base connection
+	conn, err := c.connect(address)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	// call pong RPC
+	if _, err := paxos.NewPaxosClient(conn).Pong(context.Background(), &paxos.PongMsg{
+		LastCommitted: lcm,
+		NodeId:        c.nodeId,
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Sync gets a target and sends a sync message to the target.
+func (c *Client) Sync(address string, lcm *paxos.BallotNumber, items []*paxos.SyncItem) error {
+	// base connection
+	conn, err := c.connect(address)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	// call sync RPC
+	if _, err := paxos.NewPaxosClient(conn).Sync(context.Background(), &paxos.SyncMsg{
+		LastCommitted: lcm,
+		Items:         items,
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}

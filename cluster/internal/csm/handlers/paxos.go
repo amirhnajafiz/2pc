@@ -53,8 +53,9 @@ func (p *PaxosHandler) leaderTimer() {
 				timer.Stop()
 			}
 		case <-timer.C:
-			// the node itself becomes the leader and sends a ping request to everyone
-			timer.Stop()
+			// the node itself becomes the leader
+			p.memory.SetLeader(p.memory.GetNodeName())
+			p.leader <- true
 		}
 	}
 }
@@ -80,6 +81,12 @@ func (p *PaxosHandler) leaderPinger() {
 			}
 		case <-timer.C:
 			// send a ping request to everyone
+			for _, address := range p.memory.GetClusterIPs() {
+				if err := p.client.Ping(address, p.memory.GetLastCommittedBallotNumber()); err != nil {
+					p.logger.Warn("failed to send ping message", zap.Error(err), zap.String("to", address))
+				}
+			}
+
 			timer.Reset(5 * time.Second)
 		}
 	}
@@ -247,18 +254,40 @@ func (p *PaxosHandler) Ping(msg *paxos.PingMsg) {
 		// sync the leader by calling sync
 	} else if diff < 0 {
 		// demand a sync by calling pong
+		if err := p.client.Pong(p.memory.GetFromIPTable(msg.GetNodeId()), p.memory.GetLastCommittedBallotNumber()); err != nil {
+			p.logger.Warn("failed to send pong message", zap.Error(err), zap.String("to", msg.GetNodeId()))
+		}
 	}
 }
 
 // Pong gets a pong message and syncs the follower.
 func (p *PaxosHandler) Pong(msg *paxos.PongMsg) {
 	// get paxos items
-	_, err := p.storage.GetPaxosItems(int(msg.GetLastCommitted().GetSequence()))
+	pis, err := p.storage.GetPaxosItems(int(msg.GetLastCommitted().GetSequence()))
 	if err != nil {
 		p.logger.Warn("failed to get paxos items", zap.Error(err))
 	}
 
+	// create items
+	items := make([]*paxos.SyncItem, 0)
+	for _, pi := range pis {
+		tmp := paxos.SyncItem{
+			Record: pi.Client,
+		}
+
+		if pi.Client == pi.Sender {
+			tmp.Value = int64(-1 * pi.Amount)
+		} else {
+			tmp.Value = int64(pi.Amount)
+		}
+
+		items = append(items, &tmp)
+	}
+
 	// sync the follower by calling sync
+	if err := p.client.Sync(p.memory.GetFromIPTable(msg.GetNodeId()), p.memory.GetLastCommittedBallotNumber(), items); err != nil {
+		p.logger.Warn("failed to send sync message", zap.Error(err))
+	}
 }
 
 // Sync gets a sync message and syncs the node.
