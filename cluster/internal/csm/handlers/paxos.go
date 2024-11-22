@@ -36,7 +36,7 @@ type PaxosHandler struct {
 // if it does not get enough responses in time, it will create a leader timeout packet.
 func (p *PaxosHandler) leaderTimer() {
 	// create a new timer and start it
-	timer := time.NewTimer(10 * time.Second)
+	timer := time.NewTimer(2 * time.Second)
 
 	// leader timer while-loop
 	for {
@@ -48,12 +48,14 @@ func (p *PaxosHandler) leaderTimer() {
 		select {
 		case value := <-p.timer:
 			if value {
-				timer.Reset(10 * time.Second)
+				p.logger.Debug("accepting new leader", zap.String("current leader", p.memory.GetLeader()))
+				timer.Reset(2 * time.Second)
 			} else {
 				timer.Stop()
 			}
 		case <-timer.C:
 			// the node itself becomes the leader
+			p.logger.Debug("leader timeout", zap.String("current leader", p.memory.GetLeader()))
 			p.memory.SetLeader(p.memory.GetNodeName())
 			p.leader <- true
 		}
@@ -239,8 +241,8 @@ func (p *PaxosHandler) Commit(msg *paxos.CommitMsg) {
 
 // Ping gets a ping message, and accepts it if the leader is better.
 func (p *PaxosHandler) Ping(msg *paxos.PingMsg) {
-	// leader is not good enough
-	if msg.GetNodeId() < p.memory.GetNodeName() {
+	// leader is not good enough (S1 is better than S2)
+	if msg.GetNodeId() > p.memory.GetNodeName() {
 		return
 	}
 

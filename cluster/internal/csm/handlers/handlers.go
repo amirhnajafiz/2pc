@@ -46,6 +46,8 @@ func NewPaxosHandler(
 		client:      client,
 		acceptedNum: &paxos.BallotNumber{Sequence: 0, NodeId: mem.GetNodeName()},
 		acceptedVal: nil,
+		timer:       make(chan bool),
+		leader:      make(chan bool),
 	}
 
 	// start the leader timer
