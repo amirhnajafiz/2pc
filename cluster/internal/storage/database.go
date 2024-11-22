@@ -12,11 +12,12 @@ import (
 type Database struct {
 	cluster string
 
-	conn              *mongo.Client
-	shardsCollection  *mongo.Collection
-	eventsCollection  *mongo.Collection
-	clientsCollection *mongo.Collection
-	logsCollection    *mongo.Collection
+	conn                 *mongo.Client
+	shardsCollection     *mongo.Collection
+	eventsCollection     *mongo.Collection
+	clientsCollection    *mongo.Collection
+	logsCollection       *mongo.Collection
+	paxosItemsCollection *mongo.Collection
 }
 
 // NewClusterDatabase opens a MongoDB connection and returns an instance of database struct.
@@ -57,6 +58,7 @@ func NewNodeDatabase(uri string, database string, node string) (*Database, error
 	// create pointers to collections
 	instance.clientsCollection = conn.Database(database).Collection(fmt.Sprintf("%s_clients", node))
 	instance.logsCollection = conn.Database(database).Collection(fmt.Sprintf("%s_logs", node))
+	instance.paxosItemsCollection = conn.Database(database).Collection(fmt.Sprintf("%s_paxos", node))
 
 	return &instance, nil
 }

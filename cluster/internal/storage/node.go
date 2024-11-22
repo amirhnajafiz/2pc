@@ -157,3 +157,52 @@ func (d *Database) GetCommitteds() ([]*models.Log, error) {
 
 	return results, nil
 }
+
+// InsertPaxosItem stores a paxos item inside the paxos items collection.
+func (d *Database) InsertPaxosItem(pi *models.PaxosItem) error {
+	_, err := d.paxosItemsCollection.InsertOne(context.TODO(), pi)
+
+	return err
+}
+
+// CommitPaxosItem gets a sessionId and updates a paxos item status.
+func (d *Database) CommitPaxosItem(sessionId int) error {
+	// create a filer
+	filter := bson.M{
+		"session_id": sessionId,
+	}
+
+	// create an update
+	update := bson.D{{Key: "$set", Value: bson.D{{Key: "is_committed", Value: true}}}}
+
+	// perform the update query
+	_, err := d.paxosItemsCollection.UpdateMany(context.TODO(), filter, update)
+
+	return err
+}
+
+// GetPaxosItems returns paxos items that are greater than the given ballot-number.
+func (d *Database) GetPaxosItems(from int) ([]*models.PaxosItem, error) {
+	// create a filter for ballot-numbers greater than from
+	filter := bson.D{
+		{Key: "$and", Value: bson.A{
+			bson.D{{Key: "ballot_number_num", Value: bson.D{{Key: "$gt", Value: from}}}},
+			bson.D{{Key: "is_committed", Value: true}},
+		}},
+	}
+
+	// find all documents that match the filter
+	cursor, err := d.paxosItemsCollection.Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.TODO())
+
+	// decode the results into a slice of PaxosItem structs
+	var results []*models.PaxosItem
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
