@@ -5,6 +5,7 @@ import (
 
 	"github.com/F24-CSE535/2pc/cluster/internal/grpc/client"
 	"github.com/F24-CSE535/2pc/cluster/internal/memory"
+
 	"go.uber.org/zap"
 )
 
@@ -18,9 +19,19 @@ type LeaderTimer struct {
 	leaderTimerChan chan bool
 }
 
+// StartLeaderTimer sends a true signal to leader timer channel.
+func (p *LeaderTimer) StartLeaderTimer() {
+	p.leaderTimerChan <- true
+}
+
+// StopLeaderTimer sends a false signal to leader timer channel.
+func (p *LeaderTimer) StopLeaderTimer() {
+	p.leaderTimerChan <- false
+}
+
 // leader timer is a go-routine that waits on packets from the leader.
 // if it does not get enough responses in time, it will create a leader timeout packet.
-func (p *LeaderTimer) LeaderTimer() {
+func (p *LeaderTimer) leaderTimer() {
 	// create a new timer and start it
 	timer := time.NewTimer(2 * time.Second)
 
@@ -43,13 +54,23 @@ func (p *LeaderTimer) LeaderTimer() {
 			// the node itself becomes the leader
 			p.logger.Debug("leader timeout", zap.String("current leader", p.memory.GetLeader()))
 			p.memory.SetLeader(p.memory.GetNodeName())
-			p.leaderPingChan <- true
+			p.StartLeaderPinger()
 		}
 	}
 }
 
+// StartLeaderPinger sends a true signal to leader pinger channel.
+func (p *LeaderTimer) StartLeaderPinger() {
+	p.leaderPingChan <- true
+}
+
+// StopLeaderPinger sends a false signal to leader pinger channel.
+func (p *LeaderTimer) StopLeaderPinger() {
+	p.leaderPingChan <- false
+}
+
 // leaderPinger starts pinging other servers until it gets stop by a better leader.
-func (p *LeaderTimer) LeaderPinger() {
+func (p *LeaderTimer) leaderPinger() {
 	// create a new timer and start it
 	timer := time.NewTimer(5 * time.Second)
 

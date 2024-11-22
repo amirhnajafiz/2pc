@@ -16,15 +16,14 @@ import (
 
 // PaxosHandler contains methods to perform paxos consensus protocol logic.
 type PaxosHandler struct {
-	client     *client.Client
-	logger     *zap.Logger
-	memory     *memory.SharedMemory
-	storage    *storage.Database
-	paxosTimer *timers.PaxosTimer
+	client      *client.Client
+	logger      *zap.Logger
+	memory      *memory.SharedMemory
+	storage     *storage.Database
+	leaderTimer *timers.LeaderTimer
+	paxosTimer  *timers.PaxosTimer
 
 	dispatcherNotifyChan chan bool
-	leaderTimerChan      chan bool
-	leaderPingChan       chan bool
 	csmsChan             chan *packets.Packet
 }
 
@@ -202,8 +201,8 @@ func (p *PaxosHandler) Ping(msg *paxos.PingMsg) {
 
 	// reset the timer
 	p.memory.SetLeader(msg.GetNodeId())
-	p.leaderTimerChan <- true
-	p.leaderPingChan <- false
+	p.leaderTimer.StartLeaderTimer()
+	p.leaderTimer.StopLeaderPinger()
 
 	// check the last committed message
 	diff := p.memory.GetLastCommittedBallotNumber().GetSequence() - msg.GetLastCommitted().GetSequence()

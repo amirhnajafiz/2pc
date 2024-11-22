@@ -37,24 +37,14 @@ func NewPaxosHandler(
 	mem *memory.SharedMemory,
 	st *storage.Database,
 ) *PaxosHandler {
-	instance := &PaxosHandler{
+	return &PaxosHandler{
 		memory:               mem,
 		storage:              st,
 		logger:               logr,
 		client:               client,
 		csmsChan:             channel,
 		dispatcherNotifyChan: channelNotify,
-		leaderTimerChan:      make(chan bool),
-		leaderPingChan:       make(chan bool),
+		leaderTimer:          timers.NewLeaderTimer(client, logr.Named("leader-timer"), mem),
+		paxosTimer:           timers.NewPaxosTimer(client, logr.Named("paxos-timer"), mem, channelNotify),
 	}
-
-	// create timers
-	lt := timers.NewLeaderTimer(client, logr.Named("leader-timer"), mem, instance.leaderPingChan, instance.leaderTimerChan)
-	instance.paxosTimer = timers.NewPaxosTimer(client, logr.Named("paxos-timer"), mem, instance.dispatcherNotifyChan)
-
-	// start the leader timer and leader pinger
-	go lt.LeaderTimer()
-	go lt.LeaderPinger()
-
-	return instance
 }
