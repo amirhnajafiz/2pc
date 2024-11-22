@@ -23,6 +23,8 @@ type PaxosHandler struct {
 	leaderTimer *timers.LeaderTimer
 	paxosTimer  *timers.PaxosTimer
 
+	majorityAcceptedMessages int
+
 	dispatcherNotifyChan chan bool
 	csmsChan             chan *packets.Packet
 }
@@ -118,7 +120,7 @@ func (p *PaxosHandler) Accepted(msg *paxos.AcceptedMsg) {
 	p.memory.AppendAcceptedMessage(msg)
 
 	// count the messages, if we got the majority
-	if p.memory.AcceptedMessagesSize() < 1 {
+	if p.memory.AcceptedMessagesSize() < p.majorityAcceptedMessages {
 		return
 	}
 

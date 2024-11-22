@@ -40,13 +40,14 @@ func NewPaxosHandler(
 	st *storage.Database,
 ) *PaxosHandler {
 	return &PaxosHandler{
-		memory:               mem,
-		storage:              st,
-		logger:               logr,
-		client:               client,
-		csmsChan:             channel,
-		dispatcherNotifyChan: channelNotify,
-		leaderTimer:          timers.NewLeaderTimer(client, logr.Named("leader-timer"), mem, cfg.LeaderTimeout, cfg.LeaderPingInterval),
-		paxosTimer:           timers.NewPaxosTimer(cfg.ConsensusTimeout, client, logr.Named("paxos-timer"), mem, channelNotify),
+		majorityAcceptedMessages: cfg.Majority,
+		memory:                   mem,
+		storage:                  st,
+		logger:                   logr,
+		client:                   client,
+		csmsChan:                 channel,
+		dispatcherNotifyChan:     channelNotify,
+		leaderTimer:              timers.NewLeaderTimer(client, logr.Named("leader-timer"), mem, cfg.LeaderTimeout, cfg.LeaderPingInterval),
+		paxosTimer:               timers.NewPaxosTimer(cfg.ConsensusTimeout, client, logr.Named("paxos-timer"), mem, channelNotify),
 	}
 }
