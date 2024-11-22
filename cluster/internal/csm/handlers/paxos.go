@@ -245,8 +245,9 @@ func (p *PaxosHandler) Ping(msg *paxos.PingMsg) {
 	}
 
 	// reset the timer
-	p.timer <- true
 	p.memory.SetLeader(msg.GetNodeId())
+	p.timer <- true
+	p.leader <- false
 
 	// check the last committed message
 	diff := p.memory.GetLastCommittedBallotNumber().GetSequence() - msg.GetLastCommitted().GetSequence()
