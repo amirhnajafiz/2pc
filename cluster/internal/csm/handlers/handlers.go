@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/F24-CSE535/2pc/cluster/internal/config/paxos"
 	"github.com/F24-CSE535/2pc/cluster/internal/csm/timers"
 	"github.com/F24-CSE535/2pc/cluster/internal/grpc/client"
 	"github.com/F24-CSE535/2pc/cluster/internal/lock"
@@ -30,6 +31,7 @@ func NewDatabaseHandler(
 
 // NewPaxosHandler returns an instance paxos handler.
 func NewPaxosHandler(
+	cfg *paxos.Config,
 	channel chan *packets.Packet,
 	channelNotify chan bool,
 	client *client.Client,
@@ -44,7 +46,7 @@ func NewPaxosHandler(
 		client:               client,
 		csmsChan:             channel,
 		dispatcherNotifyChan: channelNotify,
-		leaderTimer:          timers.NewLeaderTimer(client, logr.Named("leader-timer"), mem),
-		paxosTimer:           timers.NewPaxosTimer(client, logr.Named("paxos-timer"), mem, channelNotify),
+		leaderTimer:          timers.NewLeaderTimer(client, logr.Named("leader-timer"), mem, cfg.LeaderTimeout, cfg.LeaderPingInterval),
+		paxosTimer:           timers.NewPaxosTimer(cfg.ConsensusTimeout, client, logr.Named("paxos-timer"), mem, channelNotify),
 	}
 }

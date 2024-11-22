@@ -16,6 +16,8 @@ type PaxosTimer struct {
 	logger *zap.Logger
 	memory *memory.SharedMemory
 
+	consensusTimeout int
+
 	consensusTimerChan   chan bool
 	dispatcherNotifyChan chan bool
 }

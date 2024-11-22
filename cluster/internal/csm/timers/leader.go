@@ -15,6 +15,9 @@ type LeaderTimer struct {
 	logger *zap.Logger
 	memory *memory.SharedMemory
 
+	leaderTimeout      int
+	leaderPingInterval int
+
 	leaderPingChan  chan bool
 	leaderTimerChan chan bool
 }

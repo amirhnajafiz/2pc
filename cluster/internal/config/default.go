@@ -12,6 +12,7 @@ func Default() Config {
 		Database:      "global",
 		PaxosConfig: paxos.Config{
 			CSMReplicas:        1,
+			CSMBufferSize:      10,
 			Majority:           1,
 			LeaderTimeout:      10,  // in seconds
 			LeaderPingInterval: 5,   // in seconds (must be less than timeout)

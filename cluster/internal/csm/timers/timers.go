@@ -12,13 +12,17 @@ func NewLeaderTimer(
 	client *client.Client,
 	logger *zap.Logger,
 	memory *memory.SharedMemory,
+	leaderTo,
+	leaderPi int,
 ) *LeaderTimer {
 	instance := LeaderTimer{
-		client:          client,
-		logger:          logger,
-		memory:          memory,
-		leaderPingChan:  make(chan bool),
-		leaderTimerChan: make(chan bool),
+		leaderTimeout:      leaderTo,
+		leaderPingInterval: leaderPi,
+		client:             client,
+		logger:             logger,
+		memory:             memory,
+		leaderPingChan:     make(chan bool),
+		leaderTimerChan:    make(chan bool),
 	}
 
 	// start the leader timer and leader pinger
@@ -30,12 +34,14 @@ func NewLeaderTimer(
 
 // NewPaxosTimer returns an instance of paxos timer.
 func NewPaxosTimer(
+	cto int,
 	client *client.Client,
 	logger *zap.Logger,
 	memory *memory.SharedMemory,
 	dispatcherNotifyChan chan bool,
 ) *PaxosTimer {
 	return &PaxosTimer{
+		consensusTimeout:     cto,
 		client:               client,
 		logger:               logger,
 		memory:               memory,

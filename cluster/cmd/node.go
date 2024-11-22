@@ -32,7 +32,7 @@ func (n node) main(port int, name string) {
 		}
 
 		// initialize CSMs with desired replica
-		manager.Initialize(n.logger, 1)
+		manager.Initialize(n.logger)
 
 		// create a bootstrap
 		b := grpc.Bootstrap{

@@ -23,10 +23,10 @@ type Manager struct {
 }
 
 // Initialize accepts a number as the number of processing units, then it starts CSMs.
-func (m *Manager) Initialize(logr *zap.Logger, replicas int) {
+func (m *Manager) Initialize(logr *zap.Logger) {
 	// the manager input channel
-	m.Channel = make(chan *packets.Packet, 10)
-	m.DispatcherChannel = make(chan *packets.Packet, 10)
+	m.Channel = make(chan *packets.Packet, m.Cfg.CSMBufferSize)
+	m.DispatcherChannel = make(chan *packets.Packet, m.Cfg.CSMBufferSize)
 
 	// create a new dispatcher
 	dis := NewDispatcher(m.DispatcherChannel, m.Channel)
@@ -42,6 +42,7 @@ func (m *Manager) Initialize(logr *zap.Logger, replicas int) {
 
 	// create paxos handler
 	pxh := handlers.NewPaxosHandler(
+		m.Cfg,
 		m.Channel,
 		dis.GetNotifyChannel(),
 		client.NewClient(m.Memory.GetNodeName()),
@@ -50,7 +51,7 @@ func (m *Manager) Initialize(logr *zap.Logger, replicas int) {
 		m.Storage,
 	)
 
-	for i := 0; i < replicas; i++ {
+	for i := 0; i < m.Cfg.CSMReplicas; i++ {
 		// create a new CSM
 		csm := ConsensusStateMachine{
 			channel:         m.Channel,
