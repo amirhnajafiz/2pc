@@ -48,3 +48,38 @@ func (s *SharedMemory) SetLastCommittedBallotNumber(sessionId int) {
 func (s *SharedMemory) ResetLastCommittedBallotNumber(bn *paxos.BallotNumber) {
 	s.lastCommittedBallotNumber = bn
 }
+
+// SetAcceptedMessages initializes the accepted messages.
+func (s *SharedMemory) SetAcceptedMessages() {
+	s.acceptedMsgs = make([]*paxos.AcceptedMsg, 0)
+}
+
+// AppendAcceptedMessage adds a new accepted message to accepted messages list.
+func (s *SharedMemory) AppendAcceptedMessage(msg *paxos.AcceptedMsg) {
+	s.acceptedMsgs = append(s.acceptedMsgs, msg)
+}
+
+// ResetAcceptedMessages removes all accepted messages.
+func (s *SharedMemory) ResetAcceptedMessages() {
+	s.acceptedMsgs = nil
+}
+
+// IncBallotNumber increases ballot-number sequence number.
+func (s *SharedMemory) IncBallotNumber() {
+	s.ballotNumber.Sequence++
+}
+
+// SetBallotNumber updates the sequence number of the ballot-number.
+func (s *SharedMemory) SetBallotNumber(seq int64) {
+	s.ballotNumber.Sequence = seq
+}
+
+// SetAcceptedNum sets a new value for accepted-num.
+func (s *SharedMemory) SetAcceptedNum(bn *paxos.BallotNumber) {
+	s.acceptedNum = bn
+}
+
+// SetAcceptedVal sets a new value for accepted-val.
+func (s *SharedMemory) SetAcceptedVal(av *paxos.AcceptMsg) {
+	s.acceptedVal = av
+}

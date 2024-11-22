@@ -10,6 +10,11 @@ type SharedMemory struct {
 	clusterIPs  []string
 	iptable     map[string]string
 
+	ballotNumber *paxos.BallotNumber
+	acceptedNum  *paxos.BallotNumber
+	acceptedVal  *paxos.AcceptMsg
+	acceptedMsgs []*paxos.AcceptedMsg
+
 	potentialCommittedBallotNumbers map[int]*paxos.BallotNumber
 	lastCommittedBallotNumber       *paxos.BallotNumber
 }
@@ -21,6 +26,9 @@ func NewSharedMemory(leader, nm, cn string, iptable map[string]string) *SharedMe
 		nodeName:                        nm,
 		clusterName:                     cn,
 		iptable:                         iptable,
+		ballotNumber:                    &paxos.BallotNumber{Sequence: 0, NodeId: nm},
+		acceptedNum:                     &paxos.BallotNumber{Sequence: 0, NodeId: nm},
+		acceptedVal:                     nil,
 		potentialCommittedBallotNumbers: make(map[int]*paxos.BallotNumber),
 		lastCommittedBallotNumber:       &paxos.BallotNumber{Sequence: 0, NodeId: nm},
 	}

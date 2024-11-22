@@ -6,7 +6,6 @@ import (
 	"github.com/F24-CSE535/2pc/cluster/internal/memory"
 	"github.com/F24-CSE535/2pc/cluster/internal/storage"
 	"github.com/F24-CSE535/2pc/cluster/pkg/packets"
-	"github.com/F24-CSE535/2pc/cluster/pkg/rpc/paxos"
 
 	"go.uber.org/zap"
 )
@@ -38,18 +37,15 @@ func NewPaxosHandler(
 	st *storage.Database,
 ) *PaxosHandler {
 	instance := &PaxosHandler{
-		memory:       mem,
-		storage:      st,
-		channel:      channel,
-		notify:       channelNotify,
-		logger:       logr,
-		client:       client,
-		ballotNumber: &paxos.BallotNumber{Sequence: 0, NodeId: mem.GetNodeName()},
-		acceptedNum:  &paxos.BallotNumber{Sequence: 0, NodeId: mem.GetNodeName()},
-		acceptedVal:  nil,
-		timer:        make(chan bool),
-		leader:       make(chan bool),
-		consensus:    make(chan bool),
+		memory:    mem,
+		storage:   st,
+		channel:   channel,
+		notify:    channelNotify,
+		logger:    logr,
+		client:    client,
+		timer:     make(chan bool),
+		leader:    make(chan bool),
+		consensus: make(chan bool),
 	}
 
 	// start the leader timer

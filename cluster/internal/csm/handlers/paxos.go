@@ -29,11 +29,6 @@ type PaxosHandler struct {
 	timer     chan bool
 	leader    chan bool
 	consensus chan bool
-
-	ballotNumber *paxos.BallotNumber
-	acceptedNum  *paxos.BallotNumber
-	acceptedVal  *paxos.AcceptMsg
-	acceptedMsgs []*paxos.AcceptedMsg
 }
 
 // leader timer is a go-routine that waits on packets from the leader.
@@ -108,7 +103,7 @@ func (p *PaxosHandler) consensusTimer(ra string, sessionId int) {
 		timer.Stop()
 	case <-timer.C:
 		// close everything and reply with timeout
-		p.acceptedMsgs = nil
+		p.memory.ResetAcceptedMessages()
 		p.logger.Info("consensus timeout", zap.Int("session id", sessionId))
 
 		if err := p.client.Reply(ra, enums.RespConsensusFailed, sessionId); err != nil {
@@ -123,16 +118,16 @@ func (p *PaxosHandler) consensusTimer(ra string, sessionId int) {
 // Request accepts a database request and converts it to paxos request.
 func (p *PaxosHandler) Request(req *database.RequestMsg) {
 	// create a list for accepted messages
-	p.acceptedMsgs = make([]*paxos.AcceptedMsg, 0)
+	p.memory.SetAcceptedMessages()
 
 	// increament ballot-number
-	p.ballotNumber.Sequence++
-	p.acceptedNum = p.ballotNumber
+	p.memory.IncBallotNumber()
+	p.memory.SetAcceptedNum(p.memory.GetBallotNumber())
 
 	// create paxos request
 	msg := paxos.AcceptMsg{
 		Request:      utils.ConvertDatabaseRequestToPaxosRequest(req),
-		BallotNumber: p.acceptedNum,
+		BallotNumber: p.memory.GetAcceptedNum(),
 		NodeId:       p.memory.GetNodeName(),
 		CrossShard:   false,
 	}
@@ -148,21 +143,22 @@ func (p *PaxosHandler) Request(req *database.RequestMsg) {
 	go p.consensusTimer(req.GetReturnAddress(), int(req.GetTransaction().GetSessionId()))
 
 	// save the accepted val
-	p.acceptedVal = &msg
+	p.memory.SetAcceptedVal(&msg)
 }
 
 // Prepare accepts a database prepare and converts it to paxos request.
 func (p *PaxosHandler) Prepare(req *database.PrepareMsg) {
 	// create a list for accepted messages
-	p.acceptedMsgs = make([]*paxos.AcceptedMsg, 0)
+	p.memory.SetAcceptedMessages()
 
 	// increament ballot-number
-	p.acceptedNum.Sequence++
+	p.memory.IncBallotNumber()
+	p.memory.SetAcceptedNum(p.memory.GetBallotNumber())
 
 	// create paxos request
 	msg := paxos.AcceptMsg{
 		Request:      utils.ConvertDatabasePrepareToPaxosRequest(req),
-		BallotNumber: p.acceptedNum,
+		BallotNumber: p.memory.GetAcceptedNum(),
 		NodeId:       p.memory.GetNodeName(),
 		CrossShard:   true,
 	}
@@ -178,23 +174,23 @@ func (p *PaxosHandler) Prepare(req *database.PrepareMsg) {
 	go p.consensusTimer(req.GetReturnAddress(), int(req.GetTransaction().GetSessionId()))
 
 	// save the accepted val
-	p.acceptedVal = &msg
+	p.memory.SetAcceptedVal(&msg)
 }
 
 // Accept gets a new accept message and updates it's datastore and returns an accepted message.
 func (p *PaxosHandler) Accept(msg *paxos.AcceptMsg) {
 	// don't accept old ballot-numbers
-	if msg.GetBallotNumber().GetSequence() < p.ballotNumber.GetSequence() {
+	if msg.GetBallotNumber().GetSequence() < p.memory.GetBallotNumber().GetSequence() {
 		return
 	}
 
 	// update accepted number and accepted value
-	p.acceptedNum = msg.GetBallotNumber()
-	p.acceptedVal = msg
-	p.ballotNumber.Sequence = p.acceptedNum.GetSequence()
+	p.memory.SetAcceptedNum(msg.GetBallotNumber())
+	p.memory.SetAcceptedVal(msg)
+	p.memory.SetBallotNumber(msg.GetBallotNumber().GetSequence())
 
 	// send accepted message
-	if err := p.client.Accepted(p.memory.GetFromIPTable(msg.GetNodeId()), p.acceptedNum, p.acceptedVal); err != nil {
+	if err := p.client.Accepted(p.memory.GetFromIPTable(msg.GetNodeId()), p.memory.GetAcceptedNum(), p.memory.GetAcceptedVal()); err != nil {
 		p.logger.Warn("failed to send accepted message", zap.String("to", msg.GetNodeId()))
 	}
 }
@@ -202,15 +198,15 @@ func (p *PaxosHandler) Accept(msg *paxos.AcceptMsg) {
 // Accepted gets a new accepted message and follows the paxos protocol.
 func (p *PaxosHandler) Accepted(msg *paxos.AcceptedMsg) {
 	// check the consensus is on going
-	if p.acceptedMsgs == nil {
+	if p.memory.IsAcceptedMessagesEmpty() {
 		return
 	}
 
 	// store the accepted message
-	p.acceptedMsgs = append(p.acceptedMsgs, msg)
+	p.memory.AppendAcceptedMessage(msg)
 
 	// count the messages, if we got the majority
-	if len(p.acceptedMsgs) < 1 {
+	if p.memory.AcceptedMessagesSize() < 1 {
 		return
 	}
 
@@ -219,20 +215,20 @@ func (p *PaxosHandler) Accepted(msg *paxos.AcceptedMsg) {
 
 	// send commit messages
 	for _, address := range p.memory.GetClusterIPs() {
-		if err := p.client.Commit(address, p.acceptedNum, p.acceptedVal); err != nil {
+		if err := p.client.Commit(address, p.memory.GetAcceptedNum(), p.memory.GetAcceptedVal()); err != nil {
 			p.logger.Warn("failed to send commit message")
 		}
 	}
 
 	// reset all accepted messages
-	p.acceptedMsgs = nil
+	p.memory.ResetAcceptedMessages()
 
 	// send a new commit message to our own channel
 	pkt := packets.Packet{
 		Label: packets.PktPaxosCommit,
 		Payload: &paxos.CommitMsg{
-			AcceptedNumber: p.acceptedNum,
-			AcceptedValue:  p.acceptedVal,
+			AcceptedNumber: p.memory.GetAcceptedNum(),
+			AcceptedValue:  p.memory.GetAcceptedVal(),
 		},
 	}
 
@@ -246,19 +242,22 @@ func (p *PaxosHandler) Commit(msg *paxos.CommitMsg) {
 	// send a new request to our own channel
 	pkt := packets.Packet{}
 
+	// get accepted val
+	acceptedVal := p.memory.GetAcceptedVal()
+
 	// check for the request type
-	if p.acceptedVal.CrossShard {
+	if acceptedVal.CrossShard {
 		pkt.Label = packets.PktDatabasePrepare
 		pkt.Payload = &database.PrepareMsg{
-			Transaction:   utils.ConvertPaxosRequestToDatabaseTransaction(p.acceptedVal.GetRequest()),
-			Client:        p.acceptedVal.Request.GetClient(),
-			ReturnAddress: p.acceptedVal.Request.GetReturnAddress(),
+			Transaction:   utils.ConvertPaxosRequestToDatabaseTransaction(acceptedVal.GetRequest()),
+			Client:        acceptedVal.Request.GetClient(),
+			ReturnAddress: acceptedVal.Request.GetReturnAddress(),
 		}
 	} else {
 		pkt.Label = packets.PktDatabaseRequest
 		pkt.Payload = &database.RequestMsg{
-			Transaction:   utils.ConvertPaxosRequestToDatabaseTransaction(p.acceptedVal.GetRequest()),
-			ReturnAddress: p.acceptedVal.Request.GetReturnAddress(),
+			Transaction:   utils.ConvertPaxosRequestToDatabaseTransaction(acceptedVal.GetRequest()),
+			ReturnAddress: acceptedVal.Request.GetReturnAddress(),
 		}
 	}
 
@@ -358,5 +357,5 @@ func (p *PaxosHandler) Sync(msg *paxos.SyncMsg) {
 
 	// update our last committed and ballot-number
 	p.memory.ResetLastCommittedBallotNumber(msg.GetLastCommitted())
-	p.ballotNumber.Sequence = msg.GetLastCommitted().GetSequence() + 1
+	p.memory.SetBallotNumber(msg.GetLastCommitted().GetSequence() + 1)
 }

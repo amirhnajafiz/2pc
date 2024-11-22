@@ -31,3 +31,28 @@ func (s *SharedMemory) GetFromIPTable(key string) string {
 func (s *SharedMemory) GetLastCommittedBallotNumber() *paxos.BallotNumber {
 	return s.lastCommittedBallotNumber
 }
+
+// GetBallotNumber returns the node's ballot-number.
+func (s *SharedMemory) GetBallotNumber() *paxos.BallotNumber {
+	return s.ballotNumber
+}
+
+// GetAcceptedNum returns the node's accepted-number.
+func (s *SharedMemory) GetAcceptedNum() *paxos.BallotNumber {
+	return s.acceptedNum
+}
+
+// GetAcceptedVal returns the node's accepted-value.
+func (s *SharedMemory) GetAcceptedVal() *paxos.AcceptMsg {
+	return s.acceptedVal
+}
+
+// IsAcceptedMessagesEmpty returns true if accepted messages is nil.
+func (s *SharedMemory) IsAcceptedMessagesEmpty() bool {
+	return s.acceptedMsgs == nil
+}
+
+// AcceptedMessagesSize returns the len of accepted messages.
+func (s *SharedMemory) AcceptedMessagesSize() int {
+	return len(s.acceptedMsgs)
+}
