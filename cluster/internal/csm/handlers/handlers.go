@@ -48,6 +48,7 @@ func NewPaxosHandler(
 		acceptedVal: nil,
 		timer:       make(chan bool),
 		leader:      make(chan bool),
+		consensus:   make(chan bool),
 	}
 
 	// start the leader timer

@@ -7,6 +7,7 @@ import (
 	"github.com/F24-CSE535/2pc/cluster/internal/memory"
 	"github.com/F24-CSE535/2pc/cluster/internal/storage"
 	"github.com/F24-CSE535/2pc/cluster/internal/utils"
+	"github.com/F24-CSE535/2pc/cluster/pkg/enums"
 	"github.com/F24-CSE535/2pc/cluster/pkg/models"
 	"github.com/F24-CSE535/2pc/cluster/pkg/packets"
 	"github.com/F24-CSE535/2pc/cluster/pkg/rpc/database"
@@ -23,9 +24,11 @@ type PaxosHandler struct {
 	storage *storage.Database
 
 	channel chan *packets.Packet
-	notify  chan bool
-	timer   chan bool
-	leader  chan bool
+
+	notify    chan bool
+	timer     chan bool
+	leader    chan bool
+	consensus chan bool
 
 	acceptedNum  *paxos.BallotNumber
 	acceptedVal  *paxos.AcceptMsg
@@ -94,6 +97,25 @@ func (p *PaxosHandler) leaderPinger() {
 	}
 }
 
+// consensusTimers starts a consensus timer and if it hits timeout it will generate a timeout message.
+func (p *PaxosHandler) consensusTimer(ra string, sessionId int) {
+	// create a new timer and start it
+	timer := time.NewTimer(5 * time.Second)
+
+	select {
+	case <-p.consensus:
+		timer.Stop()
+	case <-timer.C:
+		// close everything and reply with timeout
+		p.acceptedMsgs = nil
+		p.logger.Info("consensus timeout", zap.Int("session id", sessionId))
+
+		if err := p.client.Reply(ra, enums.RespConsensusFailed, sessionId); err != nil {
+			p.logger.Warn("failed to send reply message", zap.Error(err), zap.String("to", ra))
+		}
+	}
+}
+
 // Request accepts a database request and converts it to paxos request.
 func (p *PaxosHandler) Request(req *database.RequestMsg) {
 	// create a list for accepted messages
@@ -116,6 +138,9 @@ func (p *PaxosHandler) Request(req *database.RequestMsg) {
 			p.logger.Warn("failed to send accept message", zap.Error(err))
 		}
 	}
+
+	// start consensus timer
+	go p.consensusTimer(req.GetReturnAddress(), int(req.GetTransaction().GetSessionId()))
 
 	// save the accepted val
 	p.acceptedVal = &msg
@@ -143,6 +168,9 @@ func (p *PaxosHandler) Prepare(req *database.PrepareMsg) {
 			p.logger.Warn("failed to send accept message", zap.Error(err))
 		}
 	}
+
+	// start consensus timer
+	go p.consensusTimer(req.GetReturnAddress(), int(req.GetTransaction().GetSessionId()))
 
 	// save the accepted val
 	p.acceptedVal = &msg
@@ -174,6 +202,9 @@ func (p *PaxosHandler) Accepted(msg *paxos.AcceptedMsg) {
 	if len(p.acceptedMsgs) < 1 {
 		return
 	}
+
+	// stop the consensus timer
+	p.consensus <- true
 
 	// send commit messages
 	for _, address := range p.memory.GetClusterIPs() {
