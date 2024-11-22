@@ -16,7 +16,7 @@ type PaxosTimer struct {
 	logger *zap.Logger
 	memory *memory.SharedMemory
 
-	consensusTimeout int
+	consensusTimeout time.Duration
 
 	consensusTimerChan   chan bool
 	dispatcherNotifyChan chan bool
@@ -25,7 +25,7 @@ type PaxosTimer struct {
 // consensusTimers starts a consensus timer and if it hits timeout it will generate a timeout message.
 func (p *PaxosTimer) StartConsensusTimer(ra string, sessionId int) {
 	// create a new timer and start it
-	timer := time.NewTimer(5 * time.Second)
+	timer := time.NewTimer(p.consensusTimeout)
 
 	select {
 	case <-p.consensusTimerChan:

@@ -15,8 +15,8 @@ type LeaderTimer struct {
 	logger *zap.Logger
 	memory *memory.SharedMemory
 
-	leaderTimeout      int
-	leaderPingInterval int
+	leaderTimeout      time.Duration
+	leaderPingInterval time.Duration
 
 	leaderPingChan  chan bool
 	leaderTimerChan chan bool
@@ -36,7 +36,7 @@ func (p *LeaderTimer) StopLeaderTimer() {
 // if it does not get enough responses in time, it will create a leader timeout packet.
 func (p *LeaderTimer) leaderTimer() {
 	// create a new timer and start it
-	timer := time.NewTimer(10 * time.Second)
+	timer := time.NewTimer(p.leaderTimeout)
 
 	// leader timer while-loop
 	for {
@@ -49,7 +49,7 @@ func (p *LeaderTimer) leaderTimer() {
 		case value := <-p.leaderTimerChan:
 			if value {
 				p.logger.Debug("accepting new leader", zap.String("current leader", p.memory.GetLeader()))
-				timer.Reset(10 * time.Second)
+				timer.Reset(p.leaderTimeout)
 			} else {
 				timer.Stop()
 			}
@@ -75,7 +75,7 @@ func (p *LeaderTimer) StopLeaderPinger() {
 // leaderPinger starts pinging other servers until it gets stop by a better leader.
 func (p *LeaderTimer) leaderPinger() {
 	// create a new timer and start it
-	timer := time.NewTimer(5 * time.Second)
+	timer := time.NewTimer(p.leaderPingInterval)
 
 	// leader pinger while-loop
 	for {
@@ -87,7 +87,7 @@ func (p *LeaderTimer) leaderPinger() {
 		select {
 		case value := <-p.leaderPingChan:
 			if value {
-				timer.Reset(5 * time.Second)
+				timer.Reset(p.leaderPingInterval)
 			} else {
 				timer.Stop()
 			}
@@ -99,7 +99,7 @@ func (p *LeaderTimer) leaderPinger() {
 				}
 			}
 
-			timer.Reset(5 * time.Second)
+			timer.Reset(p.leaderPingInterval)
 		}
 	}
 }

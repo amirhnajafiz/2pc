@@ -1,6 +1,8 @@
 package timers
 
 import (
+	"time"
+
 	"github.com/F24-CSE535/2pc/cluster/internal/grpc/client"
 	"github.com/F24-CSE535/2pc/cluster/internal/memory"
 
@@ -16,8 +18,8 @@ func NewLeaderTimer(
 	leaderPi int,
 ) *LeaderTimer {
 	instance := LeaderTimer{
-		leaderTimeout:      leaderTo,
-		leaderPingInterval: leaderPi,
+		leaderTimeout:      time.Duration(leaderTo) * time.Second,
+		leaderPingInterval: time.Duration(leaderPi) * time.Second,
 		client:             client,
 		logger:             logger,
 		memory:             memory,
@@ -41,7 +43,7 @@ func NewPaxosTimer(
 	dispatcherNotifyChan chan bool,
 ) *PaxosTimer {
 	return &PaxosTimer{
-		consensusTimeout:     cto,
+		consensusTimeout:     time.Duration(cto) * time.Millisecond,
 		client:               client,
 		logger:               logger,
 		memory:               memory,
