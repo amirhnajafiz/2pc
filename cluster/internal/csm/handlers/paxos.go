@@ -30,6 +30,7 @@ type PaxosHandler struct {
 	leader    chan bool
 	consensus chan bool
 
+	ballotNumber *paxos.BallotNumber
 	acceptedNum  *paxos.BallotNumber
 	acceptedVal  *paxos.AcceptMsg
 	acceptedMsgs []*paxos.AcceptedMsg
@@ -125,7 +126,8 @@ func (p *PaxosHandler) Request(req *database.RequestMsg) {
 	p.acceptedMsgs = make([]*paxos.AcceptedMsg, 0)
 
 	// increament ballot-number
-	p.acceptedNum.Sequence++
+	p.ballotNumber.Sequence++
+	p.acceptedNum = p.ballotNumber
 
 	// create paxos request
 	msg := paxos.AcceptMsg{
@@ -348,6 +350,7 @@ func (p *PaxosHandler) Sync(msg *paxos.SyncMsg) {
 		}
 	}
 
-	// update our last committed
+	// update our last committed and ballot-number
 	p.memory.ResetLastCommittedBallotNumber(msg.GetLastCommitted())
+	p.ballotNumber.Sequence = msg.GetLastCommitted().GetSequence() + 1
 }
