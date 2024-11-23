@@ -300,4 +300,5 @@ func (p *PaxosHandler) Unblock() {
 
 	p.memory.SetBlockStatus(false)
 	p.leaderTimer.StartLeaderTimer()
+	p.leaderTimer.StartLeaderPinger()
 }

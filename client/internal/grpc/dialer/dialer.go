@@ -210,7 +210,7 @@ func (d *Dialer) PrintDatastore(target string) ([]string, error) {
 // Block accepts a target and blocks it.
 func (d *Dialer) Block(target string) error {
 	// base connection
-	conn, err := d.connect(d.Nodes[target])
+	conn, err := d.connect(target)
 	if err != nil {
 		return err
 	}
@@ -227,7 +227,7 @@ func (d *Dialer) Block(target string) error {
 // Unblock accepts a target and blocks it.
 func (d *Dialer) Unblock(target string) error {
 	// base connection
-	conn, err := d.connect(d.Nodes[target])
+	conn, err := d.connect(target)
 	if err != nil {
 		return err
 	}
