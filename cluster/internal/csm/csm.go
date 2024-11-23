@@ -23,8 +23,7 @@ func (c *ConsensusStateMachine) Start() {
 		// case on packet label
 		switch pkt.Label {
 		case packets.PktDatabaseRequest: // comes from the paxos handler
-			msg := pkt.Payload.(*database.RequestMsg)
-			c.databaseHandler.Request(msg.GetReturnAddress(), msg.GetTransaction())
+			c.databaseHandler.Request(pkt.Payload.(*database.RequestMsg))
 		case packets.PktDatabasePrepare: // comes from the paxos handler
 			c.databaseHandler.Prepare(pkt.Payload.(*database.PrepareMsg))
 		case packets.PktDatabaseCommit: // comes from the gRPC
