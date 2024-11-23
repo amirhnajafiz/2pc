@@ -80,7 +80,7 @@ func CSVParseTestcaseFile(path string) (map[string]*models.Testcase, error) {
 			sets = append(sets, &models.Testset{
 				Sender:   tmp[0],
 				Receiver: tmp[1],
-				Amount:   tmp[3],
+				Amount:   tmp[2],
 			})
 		}
 

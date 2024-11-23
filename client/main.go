@@ -88,11 +88,11 @@ func main() {
 				continue
 			}
 
-			fmt.Printf("running testset %d\n", index)
+			fmt.Printf("running testset %d: %s %s\n", index, tc.LiveServers, tc.ContactServers)
 
 			// set servers status
 			if err := mg.UpdateNodesStatusForTest(tc.LiveServers, tc.ContactServers); err != nil {
-				fmt.Println(err.Error())
+				fmt.Printf("update servers failed: %v\n", err)
 				continue
 			}
 
