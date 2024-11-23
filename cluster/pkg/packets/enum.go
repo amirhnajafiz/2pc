@@ -6,6 +6,8 @@ const (
 	PktDatabasePrepare
 	PktDatabaseCommit
 	PktDatabaseAbort
+	PktDatabaseBlock
+	PktDatabaseUnblock
 )
 
 const (

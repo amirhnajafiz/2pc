@@ -103,3 +103,17 @@ func (d *DatabaseService) PrintDatastore(_ *emptypb.Empty, stream database.Datab
 
 	return nil
 }
+
+// Block sends a block packet to the consensus.
+func (d *DatabaseService) Block(_ context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
+	d.Channel <- &packets.Packet{Label: packets.PktDatabaseBlock}
+
+	return &emptypb.Empty{}, nil
+}
+
+// Unblock sends a unblock packet to the consensus.
+func (d *DatabaseService) Unblock(_ context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
+	d.Channel <- &packets.Packet{Label: packets.PktDatabaseUnblock}
+
+	return &emptypb.Empty{}, nil
+}

@@ -16,6 +16,8 @@ service Database {
   rpc PrintBalance(PrintBalanceMsg) returns (PrintBalanceRsp) {}
   rpc PrintLogs(google.protobuf.Empty) returns (stream LogRsp) {}
   rpc PrintDatastore(google.protobuf.Empty) returns (stream DatastoreRsp) {}
+  rpc Block(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  rpc Unblock(google.protobuf.Empty) returns (google.protobuf.Empty) {}
 }
 
 // transaction contains our units of work.

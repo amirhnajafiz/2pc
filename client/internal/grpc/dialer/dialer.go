@@ -206,3 +206,37 @@ func (d *Dialer) PrintDatastore(target string) ([]string, error) {
 		list = append(list, fmt.Sprintf("transaction %d (%s, %d)", in.GetSessionId(), in.GetRecord(), in.GetValue()))
 	}
 }
+
+// Block accepts a target and blocks it.
+func (d *Dialer) Block(target string) error {
+	// base connection
+	conn, err := d.connect(d.Nodes[target])
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	// call Block RPC
+	if _, err = database.NewDatabaseClient(conn).Block(context.Background(), &emptypb.Empty{}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Unblock accepts a target and blocks it.
+func (d *Dialer) Unblock(target string) error {
+	// base connection
+	conn, err := d.connect(d.Nodes[target])
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	// call Unblock RPC
+	if _, err = database.NewDatabaseClient(conn).Unblock(context.Background(), &emptypb.Empty{}); err != nil {
+		return err
+	}
+
+	return nil
+}

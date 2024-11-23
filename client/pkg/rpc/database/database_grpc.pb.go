@@ -29,6 +29,8 @@ const (
 	Database_PrintBalance_FullMethodName   = "/database.Database/PrintBalance"
 	Database_PrintLogs_FullMethodName      = "/database.Database/PrintLogs"
 	Database_PrintDatastore_FullMethodName = "/database.Database/PrintDatastore"
+	Database_Block_FullMethodName          = "/database.Database/Block"
+	Database_Unblock_FullMethodName        = "/database.Database/Unblock"
 )
 
 // DatabaseClient is the client API for Database service.
@@ -46,6 +48,8 @@ type DatabaseClient interface {
 	PrintBalance(ctx context.Context, in *PrintBalanceMsg, opts ...grpc.CallOption) (*PrintBalanceRsp, error)
 	PrintLogs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogRsp], error)
 	PrintDatastore(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DatastoreRsp], error)
+	Block(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Unblock(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type databaseClient struct {
@@ -164,6 +168,26 @@ func (c *databaseClient) PrintDatastore(ctx context.Context, in *emptypb.Empty, 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Database_PrintDatastoreClient = grpc.ServerStreamingClient[DatastoreRsp]
 
+func (c *databaseClient) Block(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, Database_Block_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *databaseClient) Unblock(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, Database_Unblock_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DatabaseServer is the server API for Database service.
 // All implementations must embed UnimplementedDatabaseServer
 // for forward compatibility.
@@ -179,6 +203,8 @@ type DatabaseServer interface {
 	PrintBalance(context.Context, *PrintBalanceMsg) (*PrintBalanceRsp, error)
 	PrintLogs(*emptypb.Empty, grpc.ServerStreamingServer[LogRsp]) error
 	PrintDatastore(*emptypb.Empty, grpc.ServerStreamingServer[DatastoreRsp]) error
+	Block(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
+	Unblock(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	mustEmbedUnimplementedDatabaseServer()
 }
 
@@ -215,6 +241,12 @@ func (UnimplementedDatabaseServer) PrintLogs(*emptypb.Empty, grpc.ServerStreamin
 }
 func (UnimplementedDatabaseServer) PrintDatastore(*emptypb.Empty, grpc.ServerStreamingServer[DatastoreRsp]) error {
 	return status.Errorf(codes.Unimplemented, "method PrintDatastore not implemented")
+}
+func (UnimplementedDatabaseServer) Block(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Block not implemented")
+}
+func (UnimplementedDatabaseServer) Unblock(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Unblock not implemented")
 }
 func (UnimplementedDatabaseServer) mustEmbedUnimplementedDatabaseServer() {}
 func (UnimplementedDatabaseServer) testEmbeddedByValue()                  {}
@@ -385,6 +417,42 @@ func _Database_PrintDatastore_Handler(srv interface{}, stream grpc.ServerStream)
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Database_PrintDatastoreServer = grpc.ServerStreamingServer[DatastoreRsp]
 
+func _Database_Block_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DatabaseServer).Block(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Database_Block_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DatabaseServer).Block(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Database_Unblock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DatabaseServer).Unblock(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Database_Unblock_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DatabaseServer).Unblock(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Database_ServiceDesc is the grpc.ServiceDesc for Database service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -419,6 +487,14 @@ var Database_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PrintBalance",
 			Handler:    _Database_PrintBalance_Handler,
+		},
+		{
+			MethodName: "Block",
+			Handler:    _Database_Block_Handler,
+		},
+		{
+			MethodName: "Unblock",
+			Handler:    _Database_Unblock_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
