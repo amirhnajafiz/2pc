@@ -3,13 +3,15 @@ package manager
 import (
 	"fmt"
 	"strconv"
+	"time"
 
+	"github.com/F24-CSE535/2pc/client/internal/utils"
 	"github.com/F24-CSE535/2pc/client/pkg/models"
 	"github.com/F24-CSE535/2pc/client/pkg/rpc/database"
 )
 
 func (m *Manager) Performance() string {
-	return fmt.Sprintf("throughput: %f tps, latency: %d ms", m.throughput, m.latency)
+	return fmt.Sprintf("throughput: %f tps, latency: %f ms", utils.Average(m.throughput), utils.Average(m.latency))
 }
 
 func (m *Manager) PrintBalance(argc int, argv []string) string {
@@ -116,6 +118,7 @@ func (m *Manager) Transaction(argc int, argv []string) string {
 	}
 
 	// save the transaction into cache
+	session.StartedAt = time.Now()
 	m.cache[sessionId] = &session
 
 	return fmt.Sprintf("transaction %d (%s, %s, %d): sent", sessionId, sender, receiver, amount)

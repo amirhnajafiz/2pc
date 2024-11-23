@@ -19,9 +19,8 @@ type Manager struct {
 	output  chan *models.Session
 	cache   map[int]*models.Session
 
-	throughput float64
-	latency    int64
-	count      int
+	throughput []float64
+	latency    []float64
 }
 
 // NewManager returns a new manager instance.
@@ -34,9 +33,8 @@ func NewManager(dialer *grpc.Dialer, storage *storage.Database) *Manager {
 		channel:    make(chan *models.Packet),
 		output:     make(chan *models.Session),
 		cache:      make(map[int]*models.Session),
-		throughput: 0,
-		latency:    0,
-		count:      0,
+		throughput: make([]float64, 0),
+		latency:    make([]float64, 0),
 	}
 
 	// start the processor inside a go-routine

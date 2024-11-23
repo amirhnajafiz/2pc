@@ -2,6 +2,7 @@ package manager
 
 import (
 	"log"
+	"time"
 
 	"github.com/F24-CSE535/2pc/client/pkg/rpc/database"
 )
@@ -14,9 +15,16 @@ func (m *Manager) handleReply(msg *database.ReplyMsg) {
 
 		// check for the number of replys
 		if len(session.Replys) == len(session.Participants) {
+			fn := time.Now()
+
 			// return the message to client
 			session.Text = msg.GetText()
 			m.output <- session
+
+			// update performance metrics
+			du := fn.Sub(session.StartedAt).Nanoseconds() / 1000000
+			m.throughput = append(m.throughput, float64(1000/du))
+			m.latency = append(m.latency, float64(du))
 		}
 	}
 }
