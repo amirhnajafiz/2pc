@@ -41,7 +41,7 @@ func main() {
 	go server.StartNewServer(port, mg.GetChannel())
 
 	// read the input
-	if len(args) == 5 {
+	if len(args) == 6 {
 		fmt.Println(mg.LoadTests(1, []string{args[5]}))
 	}
 
@@ -86,6 +86,12 @@ func main() {
 			fmt.Println(mg.Unblock(cargsc, cargs))
 		case "load":
 			fmt.Println(mg.LoadTests(cargsc, cargs))
+		case "current":
+			keys, items := mg.GetAllTests()
+			for _, key := range keys {
+				value := items[key]
+				fmt.Printf("%s. (%d sets) %s %s\n", key, len(value.Sets), value.LiveServers, value.ContactServers)
+			}
 		case "next":
 			tc, index := mg.GetTests()
 			if tc == nil {
