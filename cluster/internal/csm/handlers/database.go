@@ -23,6 +23,10 @@ type DatabaseHandler struct {
 
 // Request accepts a transaction message and performs the needed logic to execute it (intr-shard).
 func (d DatabaseHandler) Request(ra string, trx *database.TransactionMsg) {
+	if d.memory.GetBlockStatus() {
+		return
+	}
+
 	// get sessionId
 	sessionId := int(trx.GetSessionId())
 
@@ -131,6 +135,10 @@ func (d DatabaseHandler) Request(ra string, trx *database.TransactionMsg) {
 
 // Prepare accepts a prepare message and returns ack to the sender.
 func (d DatabaseHandler) Prepare(msg *database.PrepareMsg) {
+	if d.memory.GetBlockStatus() {
+		return
+	}
+
 	// get sessionId
 	sessionId := int(msg.Transaction.GetSessionId())
 
@@ -200,6 +208,10 @@ func (d DatabaseHandler) Prepare(msg *database.PrepareMsg) {
 
 // Commit accepts a commit message to get WALs and update the records.
 func (d DatabaseHandler) Commit(msg *database.CommitMsg) {
+	if d.memory.GetBlockStatus() {
+		return
+	}
+
 	// get sessionId
 	sessionId := int(msg.GetSessionId())
 
@@ -255,6 +267,10 @@ func (d DatabaseHandler) Commit(msg *database.CommitMsg) {
 
 // Abort will log an abort log into the logs.
 func (d DatabaseHandler) Abort(sessionId int) {
+	if d.memory.GetBlockStatus() {
+		return
+	}
+
 	// forward the abort message to all other nodes
 	if d.memory.GetLeader() == d.memory.GetNodeName() {
 		for _, address := range d.memory.GetClusterIPs() {

@@ -30,6 +30,10 @@ type PaxosHandler struct {
 
 // Request accepts a database request and converts it to paxos request.
 func (p *PaxosHandler) Request(payload interface{}, isCrossShared bool) {
+	if p.memory.GetBlockStatus() {
+		return
+	}
+
 	// create a list for accepted messages
 	p.memory.SetAcceptedMessages()
 
@@ -67,6 +71,10 @@ func (p *PaxosHandler) Request(payload interface{}, isCrossShared bool) {
 
 // Accept gets a new accept message and updates it's datastore and returns an accepted message.
 func (p *PaxosHandler) Accept(msg *paxos.AcceptMsg) {
+	if p.memory.GetBlockStatus() {
+		return
+	}
+
 	// don't accept old ballot-numbers
 	if msg.GetBallotNumber().GetSequence() < p.memory.GetBallotNumber().GetSequence() {
 		return
@@ -148,6 +156,10 @@ func (p *PaxosHandler) Accepted(msg *paxos.AcceptedMsg) {
 
 // Commit gets a commit message and creates a new request into the system.
 func (p *PaxosHandler) Commit(msg *paxos.CommitMsg) {
+	if p.memory.GetBlockStatus() {
+		return
+	}
+
 	// send a new request to our own channel
 	pkt := packets.Packet{}
 
@@ -183,6 +195,10 @@ func (p *PaxosHandler) Commit(msg *paxos.CommitMsg) {
 
 // Ping gets a ping message, and accepts it if the leader is better.
 func (p *PaxosHandler) Ping(msg *paxos.PingMsg) {
+	if p.memory.GetBlockStatus() {
+		return
+	}
+
 	// leader is not good enough (S1 is better than S2)
 	if msg.GetNodeId() > p.memory.GetNodeName() {
 		return
@@ -214,6 +230,10 @@ func (p *PaxosHandler) Ping(msg *paxos.PingMsg) {
 
 // Pong gets a pong message and syncs the follower.
 func (p *PaxosHandler) Pong(msg *paxos.PongMsg) {
+	if p.memory.GetBlockStatus() {
+		return
+	}
+
 	// get paxos items
 	pis, err := p.storage.GetLogsWithCommittedWALs(int(msg.GetLastCommitted().GetSequence()))
 	if err != nil {
@@ -237,6 +257,10 @@ func (p *PaxosHandler) Pong(msg *paxos.PongMsg) {
 
 // Sync gets a sync message and syncs the node.
 func (p *PaxosHandler) Sync(msg *paxos.SyncMsg) {
+	if p.memory.GetBlockStatus() {
+		return
+	}
+
 	// drop the old sync messages
 	if msg.GetLastCommitted().GetSequence() < p.memory.GetBallotNumber().GetSequence() {
 		return
@@ -259,6 +283,10 @@ func (p *PaxosHandler) Sync(msg *paxos.SyncMsg) {
 
 // Block stops all processes in CSMs.
 func (p *PaxosHandler) Block() {
+	if p.memory.GetBlockStatus() {
+		return
+	}
+
 	p.memory.SetBlockStatus(true)
 	p.leaderTimer.StopLeaderPinger()
 	p.leaderTimer.StopLeaderTimer()
@@ -266,6 +294,10 @@ func (p *PaxosHandler) Block() {
 
 // Unblock restarts all processes in CSMs.
 func (p *PaxosHandler) Unblock() {
+	if !p.memory.GetBlockStatus() {
+		return
+	}
+
 	p.memory.SetBlockStatus(false)
 	p.leaderTimer.StartLeaderTimer()
 }
