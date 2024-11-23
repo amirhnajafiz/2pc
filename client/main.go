@@ -40,8 +40,12 @@ func main() {
 	port, _ := strconv.Atoi(args[4])
 	go server.StartNewServer(port, mg.GetChannel())
 
-	// wait one second for the server setup
-	time.Sleep(2 * time.Second)
+	// read the input
+	if len(args) == 5 {
+		fmt.Println(mg.LoadTests(1, []string{args[5]}))
+	}
+
+	time.Sleep(1 * time.Second)
 
 	// in a for loop, read user commands
 	reader := bufio.NewReader(os.Stdin)
