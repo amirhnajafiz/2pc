@@ -122,8 +122,8 @@ func (m *Manager) Transaction(argc int, argv []string) (string, bool) {
 	session.StartedAt = time.Now()
 	m.cache[sessionId] = &session
 
-	// store shard-metric
-	if err := m.storage.InsertCrossShard(sender, receiver); err != nil {
+	// store session for future optimizations
+	if err := m.storage.InsertSession(&session); err != nil {
 		log.Printf("failed to store cross-shard metric: %v\n", err)
 	}
 

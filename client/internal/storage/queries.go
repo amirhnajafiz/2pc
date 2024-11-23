@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/F24-CSE535/2pc/client/pkg/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -31,14 +32,17 @@ func (d *Database) GetClientShard(client string) (string, error) {
 	return shard.Cluster, nil
 }
 
-// InsertCrossShard inserts a cross-shard metric.
-func (d *Database) InsertCrossShard(a, b string) error {
+// InsertSession stores a session for future system rebalance.
+func (d *Database) InsertSession(session *models.Session) error {
+	// create a new item to store
 	var item struct {
-		A string `bson:"a"`
-		B string `bson:"b"`
+		Sender   string   `bson:"sender"`
+		Receiver string   `bson:"receiver"`
+		Shards   []string `bson:"shards"`
 	}
-	item.A = a
-	item.B = b
+	item.Sender = session.Sender
+	item.Receiver = session.Receiver
+	item.Shards = session.Participants
 
 	_, err := d.crossShardsCollection.InsertOne(context.TODO(), &item)
 
