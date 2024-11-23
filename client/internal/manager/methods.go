@@ -177,3 +177,22 @@ func (m *Manager) Unblock(argc int, argv []string) string {
 
 	return "unblocked"
 }
+
+func (m *Manager) LoadTests(argc int, argv []string) string {
+	// check the number of arguments
+	if argc < 1 {
+		return "not enough arguments"
+	}
+
+	// load tests
+	tc, err := utils.CSVParseTestcaseFile(argv[0])
+	if err != nil {
+		return err.Error()
+	}
+
+	// set tests
+	m.tests = tc
+	m.index = 0
+
+	return fmt.Sprintf("load %d testsets", len(tc))
+}

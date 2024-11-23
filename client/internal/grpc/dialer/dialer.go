@@ -14,7 +14,8 @@ import (
 
 // Dialer is a module for making RPC calls from client to clusters.
 type Dialer struct {
-	Nodes map[string]string
+	Nodes    map[string]string
+	contacts map[string]string
 }
 
 // connect should be called in the beginning of each method to establish a connection.
@@ -29,10 +30,15 @@ func (d *Dialer) connect(target string) (*grpc.ClientConn, error) {
 	return conn, nil
 }
 
+// SetContacts updates the dialer contacts.
+func (d *Dialer) SetContacts(c map[string]string) {
+	d.contacts = c
+}
+
 // Request accepts a transaction parameters for an inter-shard transaction.
 func (d *Dialer) Request(target, sender, receiver string, amount, sessionId int) error {
 	// base connection
-	conn, err := d.connect(d.Nodes[target])
+	conn, err := d.connect(d.contacts[target])
 	if err != nil {
 		return err
 	}
@@ -57,7 +63,7 @@ func (d *Dialer) Request(target, sender, receiver string, amount, sessionId int)
 // Request accepts a transaction parameters for a cross-shard transaction.
 func (d *Dialer) Prepare(target, client, sender, receiver string, amount, sessionId int) error {
 	// base connection
-	conn, err := d.connect(d.Nodes[target])
+	conn, err := d.connect(d.contacts[target])
 	if err != nil {
 		return err
 	}
@@ -83,7 +89,7 @@ func (d *Dialer) Prepare(target, client, sender, receiver string, amount, sessio
 // Commit accepts a target and sessionId to send a commit message.
 func (d *Dialer) Commit(target string, sessionId int) error {
 	// base connection
-	conn, err := d.connect(d.Nodes[target])
+	conn, err := d.connect(d.contacts[target])
 	if err != nil {
 		return err
 	}
@@ -103,7 +109,7 @@ func (d *Dialer) Commit(target string, sessionId int) error {
 // Abort accepts a target and sessionId to send an abort message.
 func (d *Dialer) Abort(target string, sessionId int) error {
 	// base connection
-	conn, err := d.connect(d.Nodes[target])
+	conn, err := d.connect(d.contacts[target])
 	if err != nil {
 		return err
 	}
@@ -122,7 +128,7 @@ func (d *Dialer) Abort(target string, sessionId int) error {
 // PrintBalance accepts a target and client to return the client balance.
 func (d *Dialer) PrintBalance(target string, client string) (int, error) {
 	// base connection
-	conn, err := d.connect(d.Nodes[target])
+	conn, err := d.connect(d.contacts[target])
 	if err != nil {
 		return 0, err
 	}

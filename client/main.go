@@ -80,6 +80,37 @@ func main() {
 			fmt.Println(mg.Block(cargsc, cargs))
 		case "unblock":
 			fmt.Println(mg.Unblock(cargsc, cargs))
+		case "load":
+			fmt.Println(mg.LoadTests(cargsc, cargs))
+		case "next":
+			tc, index := mg.GetTests()
+			if tc == nil {
+				continue
+			}
+
+			fmt.Printf("running testset %d\n", index)
+
+			// set servers status
+			if err := mg.UpdateNodesStatusForTest(tc.LiveServers, tc.ContactServers); err != nil {
+				fmt.Println(err.Error())
+				continue
+			}
+
+			// send transactions in the set
+			count := 0
+			for _, set := range tc.Sets {
+				msg, ok := mg.Transaction(3, []string{set.Sender, set.Receiver, set.Amount})
+				fmt.Println(msg)
+				if ok {
+					count++
+				}
+			}
+
+			// wait for responses
+			for i := 0; i < count; i++ {
+				session := <-mg.GetOutputChannel()
+				fmt.Printf("transaction %d: %s\n", session.Id, session.Text)
+			}
 		case "performance":
 			fmt.Println(mg.Performance())
 		case "printdatastore":

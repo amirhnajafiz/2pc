@@ -1,6 +1,9 @@
 package manager
 
 import (
+	"fmt"
+	"strings"
+
 	grpc "github.com/F24-CSE535/2pc/client/internal/grpc/dialer"
 	"github.com/F24-CSE535/2pc/client/internal/memory"
 	"github.com/F24-CSE535/2pc/client/internal/storage"
@@ -18,6 +21,9 @@ type Manager struct {
 	channel chan *models.Packet
 	output  chan *models.Session
 	cache   map[int]*models.Session
+
+	tests map[string]*models.Testcase
+	index int
 
 	throughput []float64
 	latency    []float64
@@ -37,6 +43,9 @@ func NewManager(dialer *grpc.Dialer, storage *storage.Database) *Manager {
 		latency:    make([]float64, 0),
 	}
 
+	// set default contacts
+	instance.dialer.SetContacts(instance.dialer.Nodes)
+
 	// start the processor inside a go-routine
 	go instance.processor()
 
@@ -51,6 +60,49 @@ func (m *Manager) GetChannel() chan *models.Packet {
 // GetOutputChannel returns the processor ourput channel.
 func (m *Manager) GetOutputChannel() chan *models.Session {
 	return m.output
+}
+
+// GetTests returns the next testcase.
+func (m *Manager) GetTests() (*models.Testcase, int) {
+	if m.index == len(m.tests) {
+		return nil, 0
+	}
+
+	m.index++
+
+	return m.tests[fmt.Sprintf("%d", m.index)], m.index
+}
+
+// UpdateNodesStatusForTest accepts the live-servers and contact servers and updates the manager.
+func (m *Manager) UpdateNodesStatusForTest(servers []string, contacts map[string]string) error {
+	// set contacts in dialer
+	m.dialer.SetContacts(contacts)
+
+	// get all servers
+	all := strings.Split(m.dialer.Nodes["all"], ":")
+
+	// block and unblock servers
+	for _, s := range all {
+		flag := false
+		for _, ls := range servers {
+			if ls == s {
+				flag = true
+				break
+			}
+		}
+
+		if !flag {
+			if err := m.dialer.Block(s); err != nil {
+				return err
+			}
+		} else {
+			if err := m.dialer.Unblock(s); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 // processor receives all gRPC messages to send the replys.
