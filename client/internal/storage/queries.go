@@ -30,3 +30,17 @@ func (d *Database) GetClientShard(client string) (string, error) {
 
 	return shard.Cluster, nil
 }
+
+// InsertCrossShard inserts a cross-shard metric.
+func (d *Database) InsertCrossShard(a, b string) error {
+	var item struct {
+		A string `bson:"a"`
+		B string `bson:"b"`
+	}
+	item.A = a
+	item.B = b
+
+	_, err := d.crossShardsCollection.InsertOne(context.TODO(), &item)
+
+	return err
+}

@@ -10,8 +10,9 @@ import (
 
 // Database is a module that uses mongo-driver library to handle MongoDB queries.
 type Database struct {
-	conn             *mongo.Client
-	shardsCollection *mongo.Collection
+	conn                  *mongo.Client
+	shardsCollection      *mongo.Collection
+	crossShardsCollection *mongo.Collection
 }
 
 // NewDatabase opens a MySQL connection and returns an instance of
@@ -30,6 +31,7 @@ func NewDatabase(uri string, database string) (*Database, error) {
 
 	// create pointers to collections
 	instance.shardsCollection = conn.Database(database).Collection("shards")
+	instance.crossShardsCollection = conn.Database(database).Collection("cross-shards")
 
 	return &instance, nil
 }

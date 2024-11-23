@@ -2,6 +2,7 @@ package manager
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -120,6 +121,11 @@ func (m *Manager) Transaction(argc int, argv []string) (string, bool) {
 	// save the transaction into cache
 	session.StartedAt = time.Now()
 	m.cache[sessionId] = &session
+
+	// store shard-metric
+	if err := m.storage.InsertCrossShard(sender, receiver); err != nil {
+		log.Printf("failed to store cross-shard metric: %v\n", err)
+	}
 
 	return fmt.Sprintf("transaction %d (%s, %s, %d): sent", sessionId, sender, receiver, amount), true
 }
