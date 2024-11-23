@@ -29,7 +29,7 @@ func (m *Manager) Initialize(logr *zap.Logger) {
 	m.DispatcherChannel = make(chan *packets.Packet, m.Cfg.CSMBufferSize)
 
 	// create a new dispatcher
-	dis := NewDispatcher(m.DispatcherChannel, m.Channel)
+	dis := NewDispatcher(m.DispatcherChannel, m.Channel, m.Memory)
 
 	// create database handler
 	dbh := handlers.NewDatabaseHandler(
