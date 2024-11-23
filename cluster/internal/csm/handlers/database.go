@@ -31,15 +31,6 @@ func (d DatabaseHandler) Request(msg *database.RequestMsg) {
 	ra := msg.GetReturnAddress()
 	trx := msg.GetTransaction()
 
-	// if the node is not the leader, it will forward it to the leader
-	if d.memory.GetClusterName() != d.memory.GetLeader() {
-		if err := d.client.Request(d.memory.GetFromIPTable(d.memory.GetLeader()), msg); err != nil {
-			d.logger.Warn("failed to forward message to the leader", zap.Error(err))
-		}
-
-		return
-	}
-
 	// get sessionId
 	sessionId := int(trx.GetSessionId())
 
@@ -149,15 +140,6 @@ func (d DatabaseHandler) Request(msg *database.RequestMsg) {
 // Prepare accepts a prepare message and returns ack to the sender.
 func (d DatabaseHandler) Prepare(msg *database.PrepareMsg) {
 	if d.memory.GetBlockStatus() {
-		return
-	}
-
-	// if the node is not the leader, it will forward it to the leader
-	if d.memory.GetClusterName() != d.memory.GetLeader() {
-		if err := d.client.Prepare(d.memory.GetFromIPTable(d.memory.GetLeader()), msg); err != nil {
-			d.logger.Warn("failed to forward message to the leader", zap.Error(err))
-		}
-
 		return
 	}
 
