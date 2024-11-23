@@ -61,7 +61,25 @@ func (m *Manager) PrintDatastore(argc int, argv []string) ([]string, string) {
 		return nil, err.Error()
 	}
 
-	return list, ""
+	// create a list of sessions
+	records := make([]string, 0)
+	for _, id := range list {
+		if ses, err := m.storage.GetSessionById(id); err == nil {
+			records = append(records, fmt.Sprintf(
+				"transaction %d (%s, %s, %d): (%s) %s",
+				id,
+				ses.Sender,
+				ses.Receiver,
+				ses.Amount,
+				ses.Type,
+				ses.Text,
+			))
+		} else {
+			log.Printf("failed to get session %d: %v\n", id, err)
+		}
+	}
+
+	return records, ""
 }
 
 func (m *Manager) Transaction(argc int, argv []string) (string, bool) {

@@ -8,14 +8,14 @@ import (
 
 // Session is a holder for live transactions tracing.
 type Session struct {
-	Sender       string
-	Receiver     string
-	Amount       int
-	Type         string
-	Text         string
-	Id           int
-	Participants []string
-	Acks         []*database.AckMsg
-	Replys       []*database.ReplyMsg
-	StartedAt    time.Time
+	Sender       string               `bson:"sender"`
+	Receiver     string               `bson:"receiver"`
+	Amount       int                  `bson:"amount"`
+	Type         string               `bson:"type"`
+	Text         string               `bson:"text"`
+	Id           int                  `bson:"id"`
+	Participants []string             `bson:"participants"`
+	Acks         []*database.AckMsg   `bson:"-"`
+	Replys       []*database.ReplyMsg `bson:"-"`
+	StartedAt    time.Time            `bson:"-"`
 }

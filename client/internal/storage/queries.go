@@ -34,17 +34,26 @@ func (d *Database) GetClientShard(client string) (string, error) {
 
 // InsertSession stores a session for future system rebalance.
 func (d *Database) InsertSession(session *models.Session) error {
-	// create a new item to store
-	var item struct {
-		Sender   string   `bson:"sender"`
-		Receiver string   `bson:"receiver"`
-		Shards   []string `bson:"shards"`
-	}
-	item.Sender = session.Sender
-	item.Receiver = session.Receiver
-	item.Shards = session.Participants
-
-	_, err := d.crossShardsCollection.InsertOne(context.TODO(), &item)
+	_, err := d.sessionsCollection.InsertOne(context.TODO(), &session)
 
 	return err
+}
+
+// GetSessionById accepts a sessionId and returns the session that is stored in the database.
+func (d *Database) GetSessionById(sessionId int) (*models.Session, error) {
+	// create a filter fot the specific session
+	filter := bson.M{"id": sessionId}
+
+	// find the session
+	var session models.Session
+	err := d.sessionsCollection.FindOne(context.TODO(), filter).Decode(&session)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, fmt.Errorf("no session found for id: %d", sessionId)
+		}
+
+		return nil, fmt.Errorf("error fetching session: %v", err)
+	}
+
+	return &session, nil
 }
