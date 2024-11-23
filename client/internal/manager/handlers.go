@@ -40,13 +40,21 @@ func (m *Manager) handleAck(msg *database.AckMsg) {
 			// if any is aborted, then abort all
 			for _, item := range session.Acks {
 				if item.IsAborted {
-					log.Printf("transaction %d: aborted.\n", session.Id)
+					session.Text = "abort"
 
 					for _, address := range session.Participants {
 						if err := m.dialer.Abort(address, session.Id); err != nil {
 							log.Printf("failed to send abort message: %v\n", err)
 						}
 					}
+
+					fn := time.Now()
+					m.output <- session
+
+					// update performance metrics
+					du := fn.Sub(session.StartedAt).Nanoseconds() / 1000000
+					m.throughput = append(m.throughput, float64(1000/du))
+					m.latency = append(m.latency, float64(du))
 
 					return
 				}

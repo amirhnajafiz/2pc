@@ -66,10 +66,12 @@ func main() {
 		// switch on the first input as the command
 		switch parts[0] {
 		case "transaction":
-			fmt.Println(mg.Transaction(cargsc, cargs))
-
-			session := <-mg.GetOutputChannel()
-			fmt.Printf("transaction %d: %s\n", session.Id, session.Text)
+			msg, ok := mg.Transaction(cargsc, cargs)
+			fmt.Println(msg)
+			if ok {
+				session := <-mg.GetOutputChannel()
+				fmt.Printf("transaction %d: %s\n", session.Id, session.Text)
+			}
 		case "rt":
 			fmt.Println(mg.RoundTrip(cargsc, cargs))
 		case "printbalance":

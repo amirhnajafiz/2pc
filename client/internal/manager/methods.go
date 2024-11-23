@@ -63,10 +63,10 @@ func (m *Manager) PrintDatastore(argc int, argv []string) ([]string, string) {
 	return list, ""
 }
 
-func (m *Manager) Transaction(argc int, argv []string) string {
+func (m *Manager) Transaction(argc int, argv []string) (string, bool) {
 	// check the number of arguments
 	if argc < 3 {
-		return "not enough arguments"
+		return "not enough arguments", false
 	}
 
 	// extract data from input command
@@ -78,11 +78,11 @@ func (m *Manager) Transaction(argc int, argv []string) string {
 	// get shards
 	senderCluster, err := m.storage.GetClientShard(sender)
 	if err != nil {
-		return fmt.Errorf("database failed: %v", err).Error()
+		return fmt.Errorf("database failed: %v", err).Error(), false
 	}
 	receiverCluster, err := m.storage.GetClientShard(receiver)
 	if err != nil {
-		return fmt.Errorf("database failed: %v", err).Error()
+		return fmt.Errorf("database failed: %v", err).Error(), false
 	}
 
 	// create a new session
@@ -101,7 +101,7 @@ func (m *Manager) Transaction(argc int, argv []string) string {
 
 		// for inter-shard send request message to the cluster
 		if err := m.dialer.Request(senderCluster, sender, receiver, amount, sessionId); err != nil {
-			return fmt.Errorf("server failed: %v", err).Error()
+			return fmt.Errorf("server failed: %v", err).Error(), false
 		}
 	} else {
 		session.Type = "cross-shard"
@@ -110,10 +110,10 @@ func (m *Manager) Transaction(argc int, argv []string) string {
 
 		// for cross-shard send prepare messages to both clusters
 		if err := m.dialer.Prepare(senderCluster, sender, sender, receiver, amount, sessionId); err != nil {
-			return fmt.Errorf("sender server failed: %v", err).Error()
+			return fmt.Errorf("sender server failed: %v", err).Error(), false
 		}
 		if err := m.dialer.Prepare(receiverCluster, receiver, sender, receiver, amount, sessionId); err != nil {
-			return fmt.Errorf("receiver server failed: %v", err).Error()
+			return fmt.Errorf("receiver server failed: %v", err).Error(), false
 		}
 	}
 
@@ -121,7 +121,7 @@ func (m *Manager) Transaction(argc int, argv []string) string {
 	session.StartedAt = time.Now()
 	m.cache[sessionId] = &session
 
-	return fmt.Sprintf("transaction %d (%s, %s, %d): sent", sessionId, sender, receiver, amount)
+	return fmt.Sprintf("transaction %d (%s, %s, %d): sent", sessionId, sender, receiver, amount), true
 }
 
 func (m *Manager) RoundTrip(argc int, argv []string) string {
