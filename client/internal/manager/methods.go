@@ -140,3 +140,31 @@ func (m *Manager) RoundTrip(argc int, argv []string) string {
 
 	return "roundtrip sent"
 }
+
+func (m *Manager) Block(argc int, argv []string) string {
+	// check the number of arguments
+	if argc < 1 {
+		return "not enough arguments"
+	}
+
+	// make RPC call
+	if err := m.dialer.Block(argv[0]); err != nil {
+		return fmt.Errorf("server failed: %v", err).Error()
+	}
+
+	return "blocked"
+}
+
+func (m *Manager) Unblock(argc int, argv []string) string {
+	// check the number of arguments
+	if argc < 1 {
+		return "not enough arguments"
+	}
+
+	// make RPC call
+	if err := m.dialer.Unblock(argv[0]); err != nil {
+		return fmt.Errorf("server failed: %v", err).Error()
+	}
+
+	return "unblocked"
+}

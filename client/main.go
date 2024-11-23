@@ -74,6 +74,10 @@ func main() {
 			fmt.Println(mg.RoundTrip(cargsc, cargs))
 		case "printbalance":
 			fmt.Println(mg.PrintBalance(cargsc, cargs))
+		case "block":
+			fmt.Println(mg.Block(cargsc, cargs))
+		case "unblock":
+			fmt.Println(mg.Unblock(cargsc, cargs))
 		case "performance":
 			fmt.Println(mg.Performance())
 		case "printdatastore":

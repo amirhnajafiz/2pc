@@ -256,3 +256,16 @@ func (p *PaxosHandler) Sync(msg *paxos.SyncMsg) {
 	p.memory.SetAcceptedNum(nil)
 	p.memory.SetAcceptedVal(nil)
 }
+
+// Block stops all processes in CSMs.
+func (p *PaxosHandler) Block() {
+	p.memory.SetBlockStatus(true)
+	p.leaderTimer.StopLeaderPinger()
+	p.leaderTimer.StopLeaderTimer()
+}
+
+// Unblock restarts all processes in CSMs.
+func (p *PaxosHandler) Unblock() {
+	p.memory.SetBlockStatus(false)
+	p.leaderTimer.StartLeaderTimer()
+}

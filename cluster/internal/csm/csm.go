@@ -47,6 +47,10 @@ func (c *ConsensusStateMachine) Start() {
 			c.paxosHandler.Pong(pkt.Payload.(*paxos.PongMsg))
 		case packets.PktPaxosSync: // comes from the gRPC
 			c.paxosHandler.Sync(pkt.Payload.(*paxos.SyncMsg))
+		case packets.PktDatabaseBlock: // comes from the gRPC
+			c.paxosHandler.Block()
+		case packets.PktDatabaseUnblock: // comes from the gRPC
+			c.paxosHandler.Unblock()
 		}
 	}
 }

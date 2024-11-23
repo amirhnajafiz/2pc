@@ -61,3 +61,8 @@ func (s *SharedMemory) GetAcceptedMessages() []*paxos.AcceptedMsg {
 func (s *SharedMemory) GetAcceptedMessagesSize() int {
 	return len(s.acceptedMsgs)
 }
+
+// GetBlockStatus returns the block status.
+func (s *SharedMemory) GetBlockStatus() bool {
+	return s.inBlockStatus
+}

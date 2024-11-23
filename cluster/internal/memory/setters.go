@@ -68,3 +68,8 @@ func (s *SharedMemory) SetAcceptedNum(bn *paxos.BallotNumber) {
 func (s *SharedMemory) SetAcceptedVal(av *paxos.AcceptMsg) {
 	s.acceptedVal = av
 }
+
+// SetBlockStatus updates the block status
+func (s *SharedMemory) SetBlockStatus(status bool) {
+	s.inBlockStatus = status
+}
