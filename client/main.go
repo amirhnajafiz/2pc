@@ -141,6 +141,8 @@ func main() {
 					fmt.Println(st)
 				}
 			}
+		case "rebalance":
+			fmt.Println(mg.ShardsRebalance(cargsc, cargs))
 		case "exit":
 			return
 		default:

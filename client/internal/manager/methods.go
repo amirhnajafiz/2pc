@@ -1,8 +1,11 @@
 package manager
 
 import (
+	"bufio"
 	"fmt"
 	"log"
+	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -222,4 +225,50 @@ func (m *Manager) LoadTests(argc int, argv []string) string {
 	m.index = 0
 
 	return fmt.Sprintf("load %d testsets", len(tc))
+}
+
+func (m *Manager) ShardsRebalance(argc int, argv []string) string {
+	// check the number of arguments
+	if argc < 1 {
+		return "not enough arguments"
+	}
+
+	// open the file
+	file, err := os.Open(argv[0])
+	if err != nil {
+		return err.Error()
+	}
+	defer file.Close()
+
+	// create a scanner
+	scanner := bufio.NewScanner(file)
+
+	// read and process lines
+	for scanner.Scan() {
+		text := scanner.Text()
+
+		// extract the first cluster
+		clusterRegex := regexp.MustCompile(`clusters:\s*\[([^\s\]]+)`)
+		clusterMatch := clusterRegex.FindStringSubmatch(text)
+		if len(clusterMatch) > 1 {
+			firstCluster := clusterMatch[1]
+			fmt.Println("First cluster:", firstCluster)
+		}
+
+		// extract account numbers
+		accountRegex := regexp.MustCompile(`accounts:\s*\[([^\]]+)\]`)
+		accountMatch := accountRegex.FindStringSubmatch(text)
+		if len(accountMatch) > 1 {
+			accountsStr := accountMatch[1]
+			accountNumbers := strings.Split(accountsStr, ",")
+			for i, numStr := range accountNumbers {
+				num, err := strconv.Atoi(strings.TrimSpace(numStr))
+				if err == nil {
+					fmt.Printf("Account %d: %d\n", i+1, num)
+				}
+			}
+		}
+	}
+
+	return "rebalanced"
 }
