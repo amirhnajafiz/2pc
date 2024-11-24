@@ -19,6 +19,7 @@ func NewDispatcher(input, output chan *packets.Packet, mem *memory.SharedMemory)
 	// input channel is the channel that gRPC level methods publish in
 	// output channel is the channel of CSMs
 	instance := Dispatcher{
+		memory: mem,
 		input:  input,
 		output: output,
 		notify: make(chan bool),
