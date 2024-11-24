@@ -274,8 +274,8 @@ func (m *Manager) ShardsRebalance(argc int, argv []string) string {
 				}
 			}
 
-			account1 = accountNumbers[0]
-			account2 = accountNumbers[1]
+			account1 = strings.TrimSpace(accountNumbers[0])
+			account2 = strings.TrimSpace(accountNumbers[1])
 		}
 
 		// get client shards
