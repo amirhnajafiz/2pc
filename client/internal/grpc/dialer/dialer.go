@@ -246,3 +246,25 @@ func (d *Dialer) Unblock(target string) error {
 
 	return nil
 }
+
+// Rebalance calls the rebalance RPC on a target.
+func (d *Dialer) Rebalance(target string, record string, value int, isAdd bool) (string, int, error) {
+	// base connection
+	conn, err := d.connect(target)
+	if err != nil {
+		return "", 0, err
+	}
+	defer conn.Close()
+
+	// call Rebalance RPC
+	resp, err := database.NewDatabaseClient(conn).Rebalance(context.Background(), &database.RebalanceMsg{
+		Record:  record,
+		Balance: int64(value),
+		Add:     isAdd,
+	})
+	if err != nil {
+		return "", 0, err
+	}
+
+	return resp.GetRecord(), int(resp.GetBalance()), nil
+}
