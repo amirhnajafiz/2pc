@@ -68,8 +68,6 @@ func (r *RebalanceHandler) Execute(argc int, args []string) error {
 
 			fmt.Println("changes applied.")
 		}
-
-		fmt.Println("---")
 	}
 
 	return nil
