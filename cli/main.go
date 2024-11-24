@@ -19,7 +19,6 @@ func main() {
 	// load handlers into a list
 	list := []handlers.Handler{
 		&handlers.ShardHandler{},
-		&handlers.ScaleHandler{},
 		&handlers.RebalanceHandler{},
 	}
 

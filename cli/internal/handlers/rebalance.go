@@ -2,11 +2,10 @@ package handlers
 
 import (
 	"fmt"
-	"log"
+	"os"
 	"strconv"
 
 	"github.com/F24-CSE535/2pc/cli/internal/database"
-	"github.com/F24-CSE535/2pc/cli/pkg/models"
 )
 
 // RebalanceHandler runs an aggregated query to perform the shards rebalance.
@@ -18,12 +17,12 @@ func (r *RebalanceHandler) GetName() string {
 
 func (r *RebalanceHandler) Execute(argc int, args []string) error {
 	// four arguments are needed
-	if argc != 4 {
-		return fmt.Errorf("mismatch input arguments: count %d expected 4", argc)
+	if argc != 3 {
+		return fmt.Errorf("mismatch input arguments: count %d expected 3", argc)
 	}
 
 	// open database connection
-	db, err := database.NewDatabase(args[2], args[3])
+	db, err := database.NewDatabase(args[1], args[2])
 	if err != nil {
 		return fmt.Errorf("open database failed: %v", err)
 	}
@@ -34,39 +33,34 @@ func (r *RebalanceHandler) Execute(argc int, args []string) error {
 		return fmt.Errorf("input argument is not a number: %v", err)
 	}
 
-	// get suggestions
-	agr, err := db.GetAggregation(count)
+	// get aggregations
+	aggregations, err := db.GetAggregation(count)
 	if err != nil {
 		return fmt.Errorf("database failed: %v", err)
 	}
 
-	// loop and print
-	for _, result := range agr {
-		// on dry-run print all needed info
-		if args[1] == "dry-run" {
-			fmt.Printf("clusters: %v\n", result.Participants)
-			fmt.Printf("accounts: %s and %s\n", result.Account1, result.Account2)
-			fmt.Printf("transaction Count: %d\n", result.TransactionCount)
-			fmt.Printf("total Amount: %.2f\n", result.TotalAmount)
-			fmt.Printf("type: %v\n", result.Types)
-		}
+	// open the rebalance schema file
+	file, err := os.Create("new-schema.txt")
+	if err != nil {
+		return fmt.Errorf("failed to open new-schema file: %v", err)
+	}
+	defer file.Close()
 
-		// change shards by sending events
-		if args[1] == "apply" && result.Types[0] == "cross-shard" {
-			fmt.Println("making changes to shards ...")
-			fmt.Printf("clusters: %v\n", result.Participants)
-			fmt.Printf("accounts: %s and %s\n", result.Account1, result.Account2)
-
-			// insert one events
-			if err := db.InsertEvent(&models.Event{
-				Cluster:   result.Participants[0],
-				Operation: fmt.Sprintf("rebalance:%s:%s", result.Account1, result.Account2),
-			}); err != nil {
-				log.Printf("failed to make changes: %v\n", err)
-				continue
+	// loop and store them inside file
+	for _, result := range aggregations {
+		if result.Types[0] == "cross-shard" {
+			record := fmt.Sprintf(
+				"{clusters: %v, accounts: [%s, %s], transactions: %d, total: %2f}\n",
+				result.Participants,
+				result.Account1,
+				result.Account2,
+				result.TransactionCount,
+				result.TotalAmount,
+			)
+			_, err = file.WriteString(record)
+			if err != nil {
+				return fmt.Errorf("failed to store record: %v", err)
 			}
-
-			fmt.Println("changes applied.")
 		}
 	}
 
