@@ -38,7 +38,7 @@ func (d *Dispatcher) start() {
 		pkt := <-d.input
 
 		// drop the message if node is not leader
-		if d.memory.GetNodeName() != d.memory.GetLeader() {
+		if d.memory.GetNodeName() != d.memory.GetLeader() || d.memory.GetBlockStatus() {
 			continue
 		}
 
