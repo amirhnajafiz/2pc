@@ -73,10 +73,26 @@ func (m *Manager) handleAck(msg *database.AckMsg) {
 // handleTimeouts unblocks the sessions that are not finished and they hit timeout.
 func (m *Manager) handleTimeouts() {
 	for {
-		for _, value := range m.cache {
-			if len(value.Text) == 0 && time.Since(value.StartedAt) >= 10*time.Second {
-				value.Text = "request timeout"
-				m.output <- value
+		for key, value := range m.cache {
+			if len(value.Text) == 0 && time.Since(value.StartedAt) >= 5*time.Second {
+				// reset the timer
+				value.StartedAt = time.Now()
+
+				// resend the transaction
+				if value.Type == "inter-shard" {
+					// for inter-shard send request message to the cluster
+					if err := m.dialer.Request(value.Participants[0], value.Sender, value.Receiver, value.Amount, key); err != nil {
+						log.Printf("failed to resend the request for trx %d: %v\n", key, err)
+					}
+				} else {
+					// for cross-shard send prepare messages to both clusters
+					if err := m.dialer.Prepare(value.Participants[0], value.Sender, value.Sender, value.Receiver, value.Amount, key); err != nil {
+						log.Printf("failed to resend the request for trx %d: %v\n", key, err)
+					}
+					if err := m.dialer.Prepare(value.Participants[1], value.Receiver, value.Sender, value.Receiver, value.Amount, key); err != nil {
+						log.Printf("failed to resend the request for trx %d: %v\n", key, err)
+					}
+				}
 			}
 		}
 
