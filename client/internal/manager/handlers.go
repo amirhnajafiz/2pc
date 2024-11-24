@@ -69,3 +69,17 @@ func (m *Manager) handleAck(msg *database.AckMsg) {
 		}
 	}
 }
+
+// handleTimeouts unblocks the sessions that are not finished and they hit timeout.
+func (m *Manager) handleTimeouts() {
+	for {
+		for _, value := range m.cache {
+			if len(value.Text) == 0 && time.Since(value.StartedAt) >= 10*time.Second {
+				value.Text = "request timeout"
+				m.output <- value
+			}
+		}
+
+		time.Sleep(5 * time.Second)
+	}
+}

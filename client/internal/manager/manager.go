@@ -124,6 +124,9 @@ func (m *Manager) UpdateNodesStatusForTest(servers []string, contacts map[string
 
 // processor receives all gRPC messages to send the replys.
 func (m *Manager) processor() {
+	// start timeout handler
+	go m.handleTimeouts()
+
 	for {
 		// get packets from gRPC level
 		pkt := <-m.channel
