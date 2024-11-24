@@ -2,24 +2,21 @@ package main
 
 import (
 	"os"
-	"strconv"
 
 	"github.com/F24-CSE535/2pc/cluster/cmd"
 )
 
 func main() {
 	args := os.Args
-	if len(args) < 5 {
-		panic("at least four arguments are needed (./main <cluster-name> <config-path> <index> <iptable-path>)")
+	if len(args) < 3 {
+		panic("at least four arguments are needed (./main <config-path> <iptable-path>)")
 	}
 
 	// create a new cluster manager
 	cm := cmd.Cluster{
-		ClusterName: args[1],
-		ConfigPath:  args[2],
-		IPTablePath: args[4],
+		ConfigPath:  args[1],
+		IPTablePath: args[2],
 	}
-	cm.Index, _ = strconv.Atoi(args[3])
 
 	// start the cluster manager
 	if err := cm.Main(); err != nil {

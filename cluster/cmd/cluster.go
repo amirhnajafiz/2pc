@@ -17,9 +17,7 @@ import (
 // Cluster is a manager that monitors events and performs operations on a cluster nodes.
 type Cluster struct {
 	ConfigPath  string
-	ClusterName string
 	IPTablePath string
-	Index       int
 
 	iptable map[string]string
 
@@ -44,10 +42,10 @@ func (c *Cluster) Main() error {
 	c.iptable = nodes
 
 	// create a new file logger for our nodes
-	logr := logger.NewFileLogger(c.cfg.LogLevel, c.Index)
+	logr := logger.NewFileLogger(c.cfg.LogLevel, c.cfg.ReplicasStartingIndex)
 
 	// open global database connection
-	db, err := storage.NewClusterDatabase(c.cfg.MongoDB, c.cfg.Database, c.ClusterName)
+	db, err := storage.NewClusterDatabase(c.cfg.MongoDB, c.cfg.Database, c.cfg.ClusterName)
 	if err != nil {
 		return fmt.Errorf("failed to open global database connection: %v", err)
 	}
@@ -103,16 +101,16 @@ func (c *Cluster) Main() error {
 
 // scaleUp creates a new node instance.
 func (c *Cluster) scaleUp(loger *zap.Logger) error {
-	name := fmt.Sprintf("S%d", c.Index+len(c.nodes))
+	name := fmt.Sprintf("S%d", c.cfg.ReplicasStartingIndex+len(c.nodes))
 
 	// select the first node as init leader
 	leader := name
 	if len(c.nodes) > 0 {
-		leader = fmt.Sprintf("S%d", c.Index)
+		leader = fmt.Sprintf("S%d", c.cfg.ReplicasStartingIndex)
 	}
 
 	// open the new node database
-	db, err := storage.NewNodeDatabase(c.cfg.MongoDB, c.ClusterName, name)
+	db, err := storage.NewNodeDatabase(c.cfg.MongoDB, c.cfg.ClusterName, name)
 	if err != nil {
 		return fmt.Errorf("failed to open %s database connection: %v", name, err)
 	}
@@ -137,7 +135,7 @@ func (c *Cluster) scaleUp(loger *zap.Logger) error {
 		logger:             loger.Named(name),
 		database:           db,
 		terminationChannel: make(chan bool),
-		cluster:            c.ClusterName,
+		cluster:            c.cfg.ClusterName,
 		iptable:            c.iptable,
 		leader:             leader,
 	}

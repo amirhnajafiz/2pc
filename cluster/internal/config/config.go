@@ -20,13 +20,15 @@ const Prefix = "2pc_"
 
 // Config struct is a module that stores system configs.
 type Config struct {
-	WatchInterval int          `koanf:"watch_interval"`
-	Subnet        int          `koanf:"subnet"`
-	Replicas      int          `koanf:"replicas"`
-	LogLevel      string       `koanf:"log_level"`
-	MongoDB       string       `koanf:"mongodb"`
-	Database      string       `koanf:"database"`
-	PaxosConfig   paxos.Config `koanf:"paxos"`
+	WatchInterval         int          `koanf:"watch_interval"`
+	Subnet                int          `koanf:"subnet"`
+	Replicas              int          `koanf:"replicas"`
+	ReplicasStartingIndex int          `koanf:"replicas_starting_index"`
+	ClusterName           string       `koanf:"cluster_name"`
+	LogLevel              string       `koanf:"log_level"`
+	MongoDB               string       `koanf:"mongodb"`
+	Database              string       `koanf:"database"`
+	PaxosConfig           paxos.Config `koanf:"paxos"`
 }
 
 // New reads configuration with koanf, by loading a yaml config path into the Config struct.
