@@ -26,7 +26,7 @@ func (b *Bootstrap) allUnaryInterceptor(
 	info *grpc.UnaryServerInfo,
 	handler grpc.UnaryHandler,
 ) (interface{}, error) {
-	b.Logger.Info("stream rpc called", zap.String("method", info.FullMethod))
+	b.Logger.Info("rpc called", zap.String("method", info.FullMethod))
 
 	return handler(ctx, req)
 }
