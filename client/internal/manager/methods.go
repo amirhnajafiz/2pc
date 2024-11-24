@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/F24-CSE535/2pc/client/internal/utils"
@@ -27,12 +28,20 @@ func (m *Manager) PrintBalance(argc int, argv []string) string {
 		return fmt.Errorf("database failed: %v", err).Error()
 	}
 
+	// get the cluster's services
+	services := strings.Split(m.dialer.Nodes[fmt.Sprintf("E%s", cluster)], ":")
+
 	// make RPC call
-	if balance, err := m.dialer.PrintBalance(cluster, argv[0]); err != nil {
-		return fmt.Errorf("server failed: %v", err).Error()
-	} else {
-		return fmt.Sprintf("%s : %d", argv[0], balance)
+	output := ""
+	for _, svc := range services {
+		if balance, err := m.dialer.PrintBalance(svc, argv[0]); err != nil {
+			return fmt.Errorf("server failed: %v", err).Error()
+		} else {
+			output = fmt.Sprintf("%s(%s) %s : %d\n", output, svc, argv[0], balance)
+		}
 	}
+
+	return output
 }
 
 func (m *Manager) PrintLogs(argc int, argv []string) ([]string, string) {

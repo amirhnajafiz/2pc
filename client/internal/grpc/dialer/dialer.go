@@ -128,7 +128,7 @@ func (d *Dialer) Abort(target string, sessionId int) error {
 // PrintBalance accepts a target and client to return the client balance.
 func (d *Dialer) PrintBalance(target string, client string) (int, error) {
 	// base connection
-	conn, err := d.connect(d.contacts[target])
+	conn, err := d.connect(target)
 	if err != nil {
 		return 0, err
 	}
