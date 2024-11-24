@@ -1,17 +1,15 @@
 # 2PC
 
+The objective of this project is to implement a fault-tolerant distributed transaction processing system that supports a simple banking application. To this end, we partition servers into multiple clusters where each cluster maintains a data shard. Each data shard is replicated on all servers of a cluster to provide fault tolerance. The system supports two types of transactions: intra-shard and cross-shard.
+
+An intra-shard transaction accesses the data items of the same shard while a cross-shard transaction
+accesses the data items on multiple shards. To process intra-shard transactions the modified Paxos protocol implemented in the first project (or the Multi-Paxos protocol) should be used while the two-phase commit protocol is used to process cross-shard transactions.
+
 ## Cluster
 
+The cluster needs input shards. I used `cli` to manage shards and perform shards rebalance.
+
 ### Load shard data
-
-Input file:
-
-```csv
-Client, Balance
-S1, 10
-S2, 20
-S3, 40
-```
 
 Shards input:
 
@@ -33,6 +31,8 @@ Output needs to be sharded like this:
 Store these JSON objects inside `shards` collection in a MongoDB cluster.
 
 ## Client
+
+The clinet provides these functions.
 
 ### PrintBalance
 
@@ -113,3 +113,11 @@ When getting a request, the node will call `accept` on all nodes. If it is not t
 #### Commit
 
 When the leader gets `f+1` accepted messages, it will send `commit` message and execute the request.
+
+## Schema
+
+![](.github/assets/db.drawio.png)
+
+---
+
+![](.github/assets/dtm.drawio.png)
