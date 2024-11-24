@@ -17,7 +17,7 @@ func (c *ScaleHandler) GetName() string {
 func (c *ScaleHandler) Execute(argc int, args []string) error {
 	// four arguments are needed
 	if argc != 4 {
-		return fmt.Errorf("mismatch input arguments: count%d expected 4", argc)
+		return fmt.Errorf("mismatch input arguments: count %d expected 4", argc)
 	}
 
 	// open database connection
