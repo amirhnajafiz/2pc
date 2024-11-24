@@ -20,6 +20,7 @@ func main() {
 	list := []handlers.Handler{
 		&handlers.ShardHandler{},
 		&handlers.ScaleHandler{},
+		&handlers.RebalanceHandler{},
 	}
 
 	// loop over the handlers list and execute the user command
