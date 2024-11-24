@@ -32,6 +32,20 @@ func (d *Database) GetClientShard(client string) (string, error) {
 	return shard.Cluster, nil
 }
 
+// UpdateClientShard accepts a client and shard to update the client shard.
+func (d *Database) UpdateClientShard(client, shard string) error {
+	// create a filter for the specified cluster
+	filter := bson.M{"client": client}
+
+	// define the update operation
+	update := bson.D{{Key: "$set", Value: bson.D{{Key: "cluster", Value: shard}}}}
+
+	// perform the update query
+	_, err := d.shardsCollection.UpdateMany(context.TODO(), filter, update)
+
+	return err
+}
+
 // InsertSession stores a session for future system rebalance.
 func (d *Database) InsertSession(session *models.Session) error {
 	_, err := d.sessionsCollection.InsertOne(context.TODO(), &session)

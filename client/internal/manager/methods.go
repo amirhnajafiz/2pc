@@ -243,6 +243,12 @@ func (m *Manager) ShardsRebalance(argc int, argv []string) string {
 	// create a scanner
 	scanner := bufio.NewScanner(file)
 
+	var (
+		firstCluster string
+		account1     string
+		account2     string
+	)
+
 	// read and process lines
 	for scanner.Scan() {
 		text := scanner.Text()
@@ -251,7 +257,7 @@ func (m *Manager) ShardsRebalance(argc int, argv []string) string {
 		clusterRegex := regexp.MustCompile(`clusters:\s*\[([^\s\]]+)`)
 		clusterMatch := clusterRegex.FindStringSubmatch(text)
 		if len(clusterMatch) > 1 {
-			firstCluster := clusterMatch[1]
+			firstCluster = clusterMatch[1]
 			fmt.Println("cluster:", firstCluster)
 		}
 
@@ -266,6 +272,70 @@ func (m *Manager) ShardsRebalance(argc int, argv []string) string {
 				if err == nil {
 					fmt.Printf("- account %d: %d\n", i+1, num)
 				}
+			}
+
+			account1 = accountNumbers[0]
+			account2 = accountNumbers[1]
+		}
+
+		// get client shards
+		cluster1, err := m.storage.GetClientShard(account1)
+		if err != nil {
+			return err.Error()
+		}
+		cluster2, err := m.storage.GetClientShard(account2)
+		if err != nil {
+			return err.Error()
+		}
+
+		// update clusters
+		if firstCluster == cluster1 {
+			// get the cluster's services to remove account2 from cluster2
+			services := strings.Split(m.dialer.Nodes[fmt.Sprintf("E%s", cluster2)], ":")
+			targetBalance := 0
+			for _, svc := range services {
+				if _, balance, err := m.dialer.Rebalance(svc, account2, 0, false); err != nil {
+					return err.Error()
+				} else {
+					targetBalance = balance
+				}
+			}
+
+			// add account2 to the cluster1
+			services = strings.Split(m.dialer.Nodes[fmt.Sprintf("E%s", cluster1)], ":")
+			for _, svc := range services {
+				if _, _, err := m.dialer.Rebalance(svc, account2, targetBalance, true); err != nil {
+					return err.Error()
+				}
+			}
+
+			// update shard
+			if err := m.storage.UpdateClientShard(account2, cluster1); err != nil {
+				return err.Error()
+			}
+		} else {
+			// get the cluster's services to remove account1 from cluster1
+			services := strings.Split(m.dialer.Nodes[fmt.Sprintf("E%s", cluster1)], ":")
+			targetBalance := 0
+			for _, svc := range services {
+				if _, balance, err := m.dialer.Rebalance(svc, account1, 0, false); err != nil {
+					return err.Error()
+				} else {
+					targetBalance = balance
+				}
+			}
+
+			// add account1 to the cluster2
+			services = strings.Split(m.dialer.Nodes[fmt.Sprintf("E%s", cluster2)], ":")
+			for _, svc := range services {
+				if _, _, err := m.dialer.Rebalance(svc, account1, targetBalance, true); err != nil {
+					return err.Error()
+				}
+			}
+
+			// update shard
+			if err := m.storage.UpdateClientShard(account1, cluster2); err != nil {
+				return err.Error()
 			}
 		}
 	}
