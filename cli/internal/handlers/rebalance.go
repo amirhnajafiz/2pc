@@ -42,23 +42,31 @@ func (r *RebalanceHandler) Execute(argc int, args []string) error {
 
 	// loop and print
 	for _, result := range agr {
-		fmt.Printf("accounts: %s and %s\n", result.Account1, result.Account2)
-		fmt.Printf("transaction Count: %d\n", result.TransactionCount)
-		fmt.Printf("total Amount: %.2f\n", result.TotalAmount)
-		fmt.Printf("type: %v\n", result.Types)
-		fmt.Printf("clusters: %v\n", result.Participants)
+		// on dry-run print all needed info
+		if args[1] == "dry-run" {
+			fmt.Printf("clusters: %v\n", result.Participants)
+			fmt.Printf("accounts: %s and %s\n", result.Account1, result.Account2)
+			fmt.Printf("transaction Count: %d\n", result.TransactionCount)
+			fmt.Printf("total Amount: %.2f\n", result.TotalAmount)
+			fmt.Printf("type: %v\n", result.Types)
+		}
 
 		// change shards by sending events
 		if args[1] == "apply" && result.Types[0] == "cross-shard" {
 			fmt.Println("making changes to shards ...")
+			fmt.Printf("clusters: %v\n", result.Participants)
+			fmt.Printf("accounts: %s and %s\n", result.Account1, result.Account2)
+
+			// insert one events
 			if err := db.InsertEvent(&models.Event{
 				Cluster:   result.Participants[0],
-				Operation: fmt.Sprintf("rb:%s:%s", result.Account1, result.Account2),
+				Operation: fmt.Sprintf("rebalance:%s:%s", result.Account1, result.Account2),
 			}); err != nil {
 				log.Printf("failed to make changes: %v\n", err)
-			} else {
-				fmt.Println("changes applied.")
+				continue
 			}
+
+			fmt.Println("changes applied.")
 		}
 
 		fmt.Println("---")
