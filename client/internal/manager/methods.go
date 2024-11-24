@@ -252,7 +252,7 @@ func (m *Manager) ShardsRebalance(argc int, argv []string) string {
 		clusterMatch := clusterRegex.FindStringSubmatch(text)
 		if len(clusterMatch) > 1 {
 			firstCluster := clusterMatch[1]
-			fmt.Println("First cluster:", firstCluster)
+			fmt.Println("cluster:", firstCluster)
 		}
 
 		// extract account numbers
@@ -264,7 +264,7 @@ func (m *Manager) ShardsRebalance(argc int, argv []string) string {
 			for i, numStr := range accountNumbers {
 				num, err := strconv.Atoi(strings.TrimSpace(numStr))
 				if err == nil {
-					fmt.Printf("Account %d: %d\n", i+1, num)
+					fmt.Printf("- account %d: %d\n", i+1, num)
 				}
 			}
 		}
