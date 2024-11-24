@@ -26,6 +26,7 @@ const (
 	Database_Ack_FullMethodName            = "/database.Database/Ack"
 	Database_Commit_FullMethodName         = "/database.Database/Commit"
 	Database_Abort_FullMethodName          = "/database.Database/Abort"
+	Database_Rebalance_FullMethodName      = "/database.Database/Rebalance"
 	Database_PrintBalance_FullMethodName   = "/database.Database/PrintBalance"
 	Database_PrintLogs_FullMethodName      = "/database.Database/PrintLogs"
 	Database_PrintDatastore_FullMethodName = "/database.Database/PrintDatastore"
@@ -45,6 +46,7 @@ type DatabaseClient interface {
 	Ack(ctx context.Context, in *AckMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Commit(ctx context.Context, in *CommitMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Abort(ctx context.Context, in *AbortMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Rebalance(ctx context.Context, in *RebalanceMsg, opts ...grpc.CallOption) (*RebalanceRsp, error)
 	PrintBalance(ctx context.Context, in *PrintBalanceMsg, opts ...grpc.CallOption) (*PrintBalanceRsp, error)
 	PrintLogs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogRsp], error)
 	PrintDatastore(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DatastoreRsp], error)
@@ -114,6 +116,16 @@ func (c *databaseClient) Abort(ctx context.Context, in *AbortMsg, opts ...grpc.C
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, Database_Abort_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *databaseClient) Rebalance(ctx context.Context, in *RebalanceMsg, opts ...grpc.CallOption) (*RebalanceRsp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RebalanceRsp)
+	err := c.cc.Invoke(ctx, Database_Rebalance_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -200,6 +212,7 @@ type DatabaseServer interface {
 	Ack(context.Context, *AckMsg) (*emptypb.Empty, error)
 	Commit(context.Context, *CommitMsg) (*emptypb.Empty, error)
 	Abort(context.Context, *AbortMsg) (*emptypb.Empty, error)
+	Rebalance(context.Context, *RebalanceMsg) (*RebalanceRsp, error)
 	PrintBalance(context.Context, *PrintBalanceMsg) (*PrintBalanceRsp, error)
 	PrintLogs(*emptypb.Empty, grpc.ServerStreamingServer[LogRsp]) error
 	PrintDatastore(*emptypb.Empty, grpc.ServerStreamingServer[DatastoreRsp]) error
@@ -232,6 +245,9 @@ func (UnimplementedDatabaseServer) Commit(context.Context, *CommitMsg) (*emptypb
 }
 func (UnimplementedDatabaseServer) Abort(context.Context, *AbortMsg) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Abort not implemented")
+}
+func (UnimplementedDatabaseServer) Rebalance(context.Context, *RebalanceMsg) (*RebalanceRsp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Rebalance not implemented")
 }
 func (UnimplementedDatabaseServer) PrintBalance(context.Context, *PrintBalanceMsg) (*PrintBalanceRsp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PrintBalance not implemented")
@@ -377,6 +393,24 @@ func _Database_Abort_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Database_Rebalance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RebalanceMsg)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DatabaseServer).Rebalance(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Database_Rebalance_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DatabaseServer).Rebalance(ctx, req.(*RebalanceMsg))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Database_PrintBalance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PrintBalanceMsg)
 	if err := dec(in); err != nil {
@@ -483,6 +517,10 @@ var Database_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Abort",
 			Handler:    _Database_Abort_Handler,
+		},
+		{
+			MethodName: "Rebalance",
+			Handler:    _Database_Rebalance_Handler,
 		},
 		{
 			MethodName: "PrintBalance",

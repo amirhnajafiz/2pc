@@ -13,6 +13,7 @@ service Database {
   rpc Ack(AckMsg) returns (google.protobuf.Empty) {}
   rpc Commit(CommitMsg) returns (google.protobuf.Empty) {}
   rpc Abort(AbortMsg) returns (google.protobuf.Empty) {}
+  rpc Rebalance(RebalanceMsg) returns (RebalanceRsp) {}
   rpc PrintBalance(PrintBalanceMsg) returns (PrintBalanceRsp) {}
   rpc PrintLogs(google.protobuf.Empty) returns (stream LogRsp) {}
   rpc PrintDatastore(google.protobuf.Empty) returns (stream DatastoreRsp) {}
@@ -63,6 +64,19 @@ message CommitMsg {
 // abort is used in the second phase of 2pc if at least one node aborts prepare.
 message AbortMsg {
   int64 session_id = 1;
+}
+
+// rebalance is used in the rebalancing phase.
+message RebalanceMsg {
+  string record = 1;
+  int64 balance = 2;
+  bool add = 3;
+}
+
+// rebalance response is used in rebalancing phase.
+message RebalanceRsp {
+  string record = 1;
+  int64 balance = 2;
 }
 
 // client helper functions.

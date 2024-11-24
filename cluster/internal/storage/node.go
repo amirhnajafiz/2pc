@@ -50,6 +50,26 @@ func (d *Database) GetClientBalance(client string) (int, error) {
 	return int(clientInstance.Balance), nil
 }
 
+// InsertClient adds a new client to the shard schema.
+func (d *Database) InsertClient(client string, balance int) error {
+	_, err := d.clientsCollection.InsertOne(context.TODO(), &models.Client{
+		Client:  client,
+		Balance: balance,
+	})
+
+	return err
+}
+
+// DeleteClient removes a client from schema.
+func (d *Database) DeleteClient(client string) error {
+	// create a filter for the specified cluster
+	filter := bson.M{"client": client}
+
+	_, err := d.clientsCollection.DeleteOne(context.TODO(), filter)
+
+	return err
+}
+
 // UpdateClientBalance gets a client and new balance to update the balance value.
 func (d *Database) UpdateClientBalance(client string, balance int, set bool) error {
 	// create a filter for the specified cluster

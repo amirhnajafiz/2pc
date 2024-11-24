@@ -117,3 +117,31 @@ func (d *DatabaseService) Unblock(_ context.Context, _ *emptypb.Empty) (*emptypb
 
 	return &emptypb.Empty{}, nil
 }
+
+// Rebalance updates the node's schema.
+func (d *DatabaseService) Rebalance(_ context.Context, msg *database.RebalanceMsg) (*database.RebalanceRsp, error) {
+	// add the record if true
+	if msg.GetAdd() {
+		if err := d.Storage.InsertClient(msg.GetRecord(), int(msg.GetBalance())); err != nil {
+			return nil, fmt.Errorf("database failed: %v", err)
+		}
+	} else {
+		// get the client balance, remove the client and return the response
+		balance, err := d.Storage.GetClientBalance(msg.GetRecord())
+		if err != nil {
+			return nil, fmt.Errorf("database failed: %v", err)
+		}
+
+		// remove the client
+		if err := d.Storage.DeleteClient(msg.GetRecord()); err != nil {
+			return nil, fmt.Errorf("database failed: %v", err)
+		}
+
+		return &database.RebalanceRsp{
+			Record:  msg.GetRecord(),
+			Balance: int64(balance),
+		}, nil
+	}
+
+	return &database.RebalanceRsp{}, nil
+}
