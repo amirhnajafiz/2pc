@@ -20,7 +20,6 @@ const Prefix = "2pc_"
 
 // Config struct is a module that stores system configs.
 type Config struct {
-	WatchInterval         int          `koanf:"watch_interval"`
 	Subnet                int          `koanf:"subnet"`
 	Replicas              int          `koanf:"replicas"`
 	ReplicasStartingIndex int          `koanf:"replicas_starting_index"`

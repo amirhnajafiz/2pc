@@ -1,11 +1,30 @@
 # 2PC
 
-The objective of this project is to implement a fault-tolerant distributed transaction processing system that supports a simple banking application. To this end, we partition servers into multiple clusters where each cluster maintains a data shard. Each data shard is replicated on all servers of a cluster to provide fault tolerance. The system supports two types of transactions: intra-shard and cross-shard.
+The objective of this project was to implement a fault-tolerant distributed transaction processing system that supports a simple banking application. To do this, we partition servers into multiple clusters where each cluster maintains a data shard. Each data shard is replicated on all servers of a cluster to provide fault tolerance. The system supports two types of transactions: intra-shard and cross-shard.
 
 An intra-shard transaction accesses the data items of the same shard while a cross-shard transaction
-accesses the data items on multiple shards. To process intra-shard transactions the modified Paxos protocol implemented in the first project (or the Multi-Paxos protocol) should be used while the two-phase commit protocol is used to process cross-shard transactions.
+accesses the data items on multiple shards. To process intra-shard transactions the `multi paxos` protocol is used while the `two-phase commit` protocol is used to process cross-shard transactions.
 
 ## Cluster
+
+The project `cluster` is a program that runs the system `nodes`. In order to set up a cluster, we need to create a `config.yaml` file like this:
+
+```yaml
+subnet: 6001
+replicas: 3
+replicas_starting_index: 1
+cluster_name: "C1"
+log_level: "debug"
+mongodb: "mongodb://localhost:27017/"
+database: "global"
+paxos:
+  state_machine_replicas: 1
+  state_machine_queue_size: 10
+  majority: 1
+  leader_timeout: 3 # in seconds
+  leader_ping_interval: 1 # in seconds (must be less than timeout)
+  consensus_timeout: 100 # in milliseconds
+```
 
 The cluster needs input shards. I used `cli` to manage shards and perform shards rebalance.
 

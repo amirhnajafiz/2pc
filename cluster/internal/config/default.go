@@ -4,7 +4,6 @@ import "github.com/F24-CSE535/2pc/cluster/internal/config/paxos"
 
 func Default() Config {
 	return Config{
-		WatchInterval:         0, // in seconds (if set to zero, it will be disabled)
 		Subnet:                6001,
 		Replicas:              1,
 		ReplicasStartingIndex: 1,
