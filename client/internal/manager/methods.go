@@ -35,12 +35,12 @@ func (m *Manager) PrintBalance(argc int, argv []string) string {
 	services := strings.Split(m.dialer.Nodes[fmt.Sprintf("E%s", cluster)], ":")
 
 	// make RPC call
-	output := ""
+	output := fmt.Sprintf("-- server - %s --\n", argv[0])
 	for _, svc := range services {
 		if balance, err := m.dialer.PrintBalance(svc, argv[0]); err != nil {
 			return fmt.Errorf("server failed: %v", err).Error()
 		} else {
-			output = fmt.Sprintf("%s(%s) %s : %d\n", output, svc, argv[0], balance)
+			output = fmt.Sprintf("%s%s - %d\n", output, svc, balance)
 		}
 	}
 
