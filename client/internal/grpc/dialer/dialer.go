@@ -180,7 +180,7 @@ func (d *Dialer) PrintLogs(target string) ([]string, error) {
 }
 
 // PrintDatastore accepts a target and calls PrintDatastore RPC on the target.
-func (d *Dialer) PrintDatastore(target string) ([]int, error) {
+func (d *Dialer) PrintDatastore(target string) ([]*database.DatastoreRsp, error) {
 	// base connection
 	conn, err := d.connect(target)
 	if err != nil {
@@ -195,7 +195,7 @@ func (d *Dialer) PrintDatastore(target string) ([]int, error) {
 	}
 
 	// create a list to store datastore
-	list := make([]int, 0)
+	list := make([]*database.DatastoreRsp, 0)
 
 	for {
 		// read logs one by one
@@ -209,7 +209,7 @@ func (d *Dialer) PrintDatastore(target string) ([]int, error) {
 		}
 
 		// append to the list of blocks
-		list = append(list, int(in.GetSessionId()))
+		list = append(list, in)
 	}
 }
 
