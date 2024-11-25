@@ -55,13 +55,17 @@ func (d DatabaseHandler) Request(msg *database.RequestMsg) {
 		return
 	}
 
+	// get ballot-number by session-id
+	bn := d.memory.GetBallotNumberBySessionId(sessionId)
+
 	// create a list of WALs
 	wals := make([]*models.Log, 0)
 	wals = append(wals, &models.Log{
-		SessionId:    sessionId,
-		Message:      enums.WALStart,
-		BallotNumber: int(d.memory.GetBallotNumberBySessionId(sessionId).GetSequence())},
-	)
+		SessionId:            sessionId,
+		Message:              enums.WALStart,
+		BallotNumberSequence: int(bn.GetSequence()),
+		BallotNumberPid:      bn.GetNodeId(),
+	})
 
 	response := ""
 
@@ -80,23 +84,26 @@ func (d DatabaseHandler) Request(msg *database.RequestMsg) {
 		// add logs to store records
 		wals = append(wals,
 			&models.Log{
-				SessionId:    sessionId,
-				Message:      enums.WALUpdate,
-				Record:       trx.GetSender(),
-				NewValue:     -1 * int(trx.GetAmount()),
-				BallotNumber: int(d.memory.GetBallotNumberBySessionId(sessionId).GetSequence()),
+				SessionId:            sessionId,
+				Message:              enums.WALUpdate,
+				Record:               trx.GetSender(),
+				NewValue:             -1 * int(trx.GetAmount()),
+				BallotNumberSequence: int(bn.GetSequence()),
+				BallotNumberPid:      bn.GetNodeId(),
 			},
 			&models.Log{
-				SessionId:    sessionId,
-				Message:      enums.WALUpdate,
-				Record:       trx.GetReceiver(),
-				NewValue:     int(trx.GetAmount()),
-				BallotNumber: int(d.memory.GetBallotNumberBySessionId(sessionId).GetSequence()),
+				SessionId:            sessionId,
+				Message:              enums.WALUpdate,
+				Record:               trx.GetReceiver(),
+				NewValue:             int(trx.GetAmount()),
+				BallotNumberSequence: int(bn.GetSequence()),
+				BallotNumberPid:      bn.GetNodeId(),
 			},
 			&models.Log{
-				SessionId:    sessionId,
-				Message:      enums.WALCommit,
-				BallotNumber: int(d.memory.GetBallotNumberBySessionId(sessionId).GetSequence()),
+				SessionId:            sessionId,
+				Message:              enums.WALCommit,
+				BallotNumberSequence: int(bn.GetSequence()),
+				BallotNumberPid:      bn.GetNodeId(),
 			},
 		)
 
@@ -111,9 +118,10 @@ func (d DatabaseHandler) Request(msg *database.RequestMsg) {
 
 		wals = append(wals,
 			&models.Log{
-				SessionId:    sessionId,
-				Message:      enums.WALAbort,
-				BallotNumber: int(d.memory.GetBallotNumberBySessionId(sessionId).GetSequence()),
+				SessionId:            sessionId,
+				Message:              enums.WALAbort,
+				BallotNumberSequence: int(bn.GetSequence()),
+				BallotNumberPid:      bn.GetNodeId(),
 			},
 		)
 
@@ -247,10 +255,15 @@ func (d DatabaseHandler) Commit(msg *database.CommitMsg) {
 		}
 	}
 
+	// get ballot-number by session-id
+	bn := d.memory.GetBallotNumberBySessionId(sessionId)
+
 	// store a commit log
 	if err := d.storage.InsertWAL(&models.Log{
-		SessionId: sessionId,
-		Message:   enums.WALCommit,
+		SessionId:            sessionId,
+		Message:              enums.WALCommit,
+		BallotNumberSequence: int(bn.GetSequence()),
+		BallotNumberPid:      bn.GetNodeId(),
 	}); err != nil {
 		d.logger.Warn("failed to store log", zap.Error(err))
 		return
@@ -296,10 +309,15 @@ func (d DatabaseHandler) Abort(sessionId int) {
 		d.manager.Unlock(wal.Record, sessionId)
 	}
 
+	// get ballot-number by session-id
+	bn := d.memory.GetBallotNumberBySessionId(sessionId)
+
 	// insert a abort WAL
 	if err := d.storage.InsertWAL(&models.Log{
-		SessionId: sessionId,
-		Message:   enums.WALAbort,
+		SessionId:            sessionId,
+		Message:              enums.WALAbort,
+		BallotNumberSequence: int(bn.GetSequence()),
+		BallotNumberPid:      bn.GetNodeId(),
 	}); err != nil {
 		d.logger.Warn("failed to store log", zap.Error(err))
 	}
