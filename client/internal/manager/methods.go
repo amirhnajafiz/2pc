@@ -75,19 +75,18 @@ func (m *Manager) PrintDatastore(argc int, argv []string) ([]string, string) {
 
 	// create a list of sessions
 	records := make([]string, 0)
-	for _, id := range list {
-		if ses, err := m.storage.GetSessionById(int(id.GetSessionId())); err == nil {
+	for _, msg := range list {
+		if ses, err := m.storage.GetSessionById(int(msg.GetSessionId())); err == nil {
 			records = append(records, fmt.Sprintf(
-				"transaction %d (%s, %s, %d): (%s) %s",
-				id.GetSessionId(),
+				"[<%d, %s>, (%s, %s, %d)]",
+				msg.GetBallotNumberSequence(),
+				msg.GetBallotNumberPid(),
 				ses.Sender,
 				ses.Receiver,
 				ses.Amount,
-				ses.Type,
-				ses.Text,
 			))
 		} else {
-			log.Printf("failed to get session %d: %v\n", id.GetSessionId(), err)
+			log.Printf("failed to get session %d: %v\n", msg.GetSessionId(), err)
 		}
 	}
 
