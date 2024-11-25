@@ -10,14 +10,14 @@ accesses the data items on multiple shards. To process intra-shard transactions 
 The project `cluster` is a program that runs the system `nodes`. In order to set up a cluster, we need to create a `config.yaml` file like this:
 
 ```yaml
-subnet: 6001
-replicas: 3
-replicas_starting_index: 1
-cluster_name: "C1"
-log_level: "debug"
-mongodb: "mongodb://localhost:27017/"
-database: "global"
-paxos:
+subnet: 6001 # nodes ports will start from this subnet and increament
+replicas: 3 # the number of cluster replicas
+replicas_starting_index: 1 # replica name prefix
+cluster_name: "C1" # the cluster name
+log_level: "debug" # log level
+mongodb: "mongodb://localhost:27017/" # mongo db address
+database: "global" # global db to load the hards
+paxos: # paxos consensus parameters
   state_machine_replicas: 1
   state_machine_queue_size: 10
   majority: 1
@@ -26,18 +26,48 @@ paxos:
   consensus_timeout: 100 # in milliseconds
 ```
 
-The cluster needs input shards. I used `cli` to manage shards and perform shards rebalance.
+Then you can start the cluster by running `./main ../configs/C1.yaml ../configs/hosts.ini`. The file `hosts.ini` holds the data for nodes and their addresses. Make sure to modify it:
+
+```ini
+S1-localhost:6001
+S2-localhost:6002
+S3-localhost:6003
+S4-localhost:7001
+S5-localhost:7002
+S6-localhost:7003
+S7-localhost:8001
+S8-localhost:8002
+S9-localhost:8003
+client-localhost:5001
+C1-S1
+C2-S4
+C3-S7
+EC1-S1:S2:S3
+EC2-S4:S5:S6
+EC3-S7:S8:S9
+all-S1:S2:S3:S4:S5:S6:S7:S8:S9
+```
+
+The cluster needs input shards. To build our shards, we need to use `cli` to manage shards and perform shards rebalance.
+
+```sh
+# running ./main shard <path-to-inputs> <path-to-shards> <mongo-db-uri> global
+./main shard ../tests/shards.csv $(cat ../configs/local.txt) global
+
+# running ./main rebalance <transactions-count> <mongo-db-uri> global
+./main rebalance 1 $(cat ../configs/local.txt) global
+```
 
 ### Load shard data
 
-Shards input:
+Shards input file is a CSV like this:
 
 ```csv
 Shard, Cluster, Range
 D1, C1, 1-1000
 ```
 
-Output needs to be sharded like this:
+The ouput will be stored inside `MongoDB` cluster like this in `global` database:
 
 ```json
 {
@@ -47,11 +77,16 @@ Output needs to be sharded like this:
 }
 ```
 
-Store these JSON objects inside `shards` collection in a MongoDB cluster.
+They are accessable inside `shards` collection in a MongoDB cluster.
 
 ## Client
 
-The clinet provides these functions.
+The client has a `gRPC` server to receive outputs. Therefore, you have to run it by entring:
+
+```sh
+# running ./main <ip-tables> <mongo-uri> <database> <grpc-port> <test-case-path>
+./main ../configs/hosts.ini $(cat ../configs/local.txt) global 5001 ../tests/tests.csv
+```
 
 ### PrintBalance
 
@@ -68,6 +103,10 @@ Accept a target and prints its logs.
 ### PrintDatastore
 
 Accept a target and prints its committed transactions.
+
+### PrintDatastores
+
+Loops over all servers and calls print datastore.
 
 ### 2PC
 
@@ -133,7 +172,20 @@ When getting a request, the node will call `accept` on all nodes. If it is not t
 
 When the leader gets `f+1` accepted messages, it will send `commit` message and execute the request.
 
+### Shards Rebalance
+
+In order to rebalance the shards, first use `cli` to find the suggested accounts to be replaced inside the shards. Its output is a `new-schema.txt` like this:
+
+```
+{clusters: [C1 C2], accounts: [1997, 796], transactions: 2, total: 16.000000}
+{clusters: [C1 C3], accounts: [11, 2001], transactions: 2, total: 12.000000}
+```
+
+Then in the client, run `rebalance` command and pass this file in order to rebalance the shards.
+
 ## Schema
+
+In here you can see the system diagrams that are used inside and outside the clusters.
 
 ![](.github/assets/db.drawio.png)
 
