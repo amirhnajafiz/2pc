@@ -155,6 +155,30 @@ func (d *Database) GetWALs() ([]*models.Log, error) {
 	return results, nil
 }
 
+// GetCommittedWALs returns all committed logs.
+func (d *Database) GetCommittedWALs(from int) ([]*models.Log, error) {
+	// create logs filter
+	filter := bson.M{
+		"message":                enums.WALCommit,
+		"ballot_number_sequence": bson.M{"$gt": from},
+	}
+
+	// find all documents that match the filter
+	cursor, err := d.logsCollection.Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.TODO())
+
+	// decode the results into a slice of Logs structs
+	var results []*models.Log
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
+
 // GetLogsWithCommittedWALs returns the committed transactions.
 func (d *Database) GetLogsWithCommittedWALs(from int) ([]*models.Log, error) {
 	// create a filet for commit logs that are after the from input
