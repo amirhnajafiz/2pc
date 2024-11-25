@@ -35,12 +35,12 @@ func (m *Manager) PrintBalance(argc int, argv []string) string {
 	services := strings.Split(m.dialer.Nodes[fmt.Sprintf("E%s", cluster)], ":")
 
 	// make RPC call
-	output := fmt.Sprintf("-- server - %s --\n", argv[0])
+	output := fmt.Sprintf("--  server  -  %s  --\n", argv[0])
 	for _, svc := range services {
 		if balance, err := m.dialer.PrintBalance(svc, argv[0]); err != nil {
 			return fmt.Errorf("server failed: %v", err).Error()
 		} else {
-			output = fmt.Sprintf("%s%s - %d\n", output, svc, balance)
+			output = fmt.Sprintf("%s     %s     -  %d\n", output, svc, balance)
 		}
 	}
 
@@ -78,7 +78,7 @@ func (m *Manager) PrintDatastore(argc int, argv []string) ([]string, string) {
 	for _, msg := range list {
 		if ses, err := m.storage.GetSessionById(int(msg.GetSessionId())); err == nil {
 			records = append(records, fmt.Sprintf(
-				"[<%d, %s>, (%s, %s, %d)]",
+				"\t[<%d, %s>, (%s, %s, %d)]",
 				msg.GetBallotNumberSequence(),
 				msg.GetBallotNumberPid(),
 				ses.Sender,
@@ -88,6 +88,45 @@ func (m *Manager) PrintDatastore(argc int, argv []string) ([]string, string) {
 		} else {
 			log.Printf("failed to get session %d: %v\n", msg.GetSessionId(), err)
 		}
+	}
+
+	return records, ""
+}
+
+func (m *Manager) PrintDatastores(argc int, argv []string) ([]string, string) {
+	// set a list of servers
+	servers := strings.Split(m.dialer.Nodes["all"], ":")
+
+	// create a list of records
+	records := make([]string, 0)
+
+	// loop over servers and get messages
+	for _, svc := range servers {
+		// make RPC call
+		list, err := m.dialer.PrintDatastore(svc)
+		if err != nil {
+			return nil, err.Error()
+		}
+
+		// get sessions from the database
+		output := fmt.Sprintf("%s:\n", svc)
+		for _, msg := range list {
+			if ses, err := m.storage.GetSessionById(int(msg.GetSessionId())); err == nil {
+				output = fmt.Sprintf(
+					"%s\t[<%d, %s>, (%s, %s, %d)]\n",
+					output,
+					msg.GetBallotNumberSequence(),
+					msg.GetBallotNumberPid(),
+					ses.Sender,
+					ses.Receiver,
+					ses.Amount,
+				)
+			} else {
+				log.Printf("failed to get session %d: %v\n", msg.GetSessionId(), err)
+			}
+		}
+
+		records = append(records, output)
 	}
 
 	return records, ""

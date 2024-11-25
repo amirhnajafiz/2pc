@@ -123,6 +123,15 @@ func main() {
 			}
 		case "performance":
 			fmt.Println(mg.Performance())
+		case "printdatastores":
+			ds, msg := mg.PrintDatastores(cargsc, cargs)
+			if ds == nil {
+				fmt.Println(msg)
+			} else {
+				for _, st := range ds {
+					fmt.Println(st)
+				}
+			}
 		case "printdatastore":
 			ds, msg := mg.PrintDatastore(cargsc, cargs)
 			if ds == nil {
