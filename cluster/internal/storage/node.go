@@ -159,8 +159,8 @@ func (d *Database) GetWALs() ([]*models.Log, error) {
 func (d *Database) GetLogsWithCommittedWALs(from int) ([]*models.Log, error) {
 	// create a filet for commit logs that are after the from input
 	commitFilter := bson.M{
-		"message":       enums.WALCommit,
-		"ballot_number": bson.M{"$gt": from},
+		"message":                enums.WALCommit,
+		"ballot_number_sequence": bson.M{"$gt": from},
 	}
 
 	// run commits query

@@ -43,9 +43,9 @@ func CSVParseTestcaseFile(path string) (map[string]*models.Testcase, error) {
 		if row[0] == "" { // old row
 			tmp := strings.Split(strings.Replace(strings.Replace(row[1], "(", "", -1), ")", "", -1), ", ")
 			sets = append(sets, &models.Testset{
-				Sender:   tmp[0],
-				Receiver: tmp[1],
-				Amount:   tmp[2],
+				Sender:   strings.TrimSpace(tmp[0]),
+				Receiver: strings.TrimSpace(tmp[1]),
+				Amount:   strings.TrimSpace(tmp[2]),
 			})
 		} else {
 			// save the current values
@@ -78,9 +78,9 @@ func CSVParseTestcaseFile(path string) (map[string]*models.Testcase, error) {
 			// process the first row transactions
 			tmp := strings.Split(strings.Replace(strings.Replace(row[1], "(", "", -1), ")", "", -1), ", ")
 			sets = append(sets, &models.Testset{
-				Sender:   tmp[0],
-				Receiver: tmp[1],
-				Amount:   tmp[2],
+				Sender:   strings.TrimSpace(tmp[0]),
+				Receiver: strings.TrimSpace(tmp[1]),
+				Amount:   strings.TrimSpace(tmp[2]),
 			})
 		}
 
