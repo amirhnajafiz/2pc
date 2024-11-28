@@ -17,6 +17,7 @@ type Database struct {
 	eventsCollection  *mongo.Collection
 	clientsCollection *mongo.Collection
 	logsCollection    *mongo.Collection
+	locksCollection   *mongo.Collection
 }
 
 // NewClusterDatabase opens a MongoDB connection and returns an instance of database struct.
@@ -57,6 +58,7 @@ func NewNodeDatabase(uri string, database string, node string) (*Database, error
 	// create pointers to collections
 	instance.clientsCollection = conn.Database(database).Collection(fmt.Sprintf("%s_clients", node))
 	instance.logsCollection = conn.Database(database).Collection(fmt.Sprintf("%s_logs", node))
+	instance.locksCollection = conn.Database(database).Collection(fmt.Sprintf("%s_locks", node))
 
 	return &instance, nil
 }

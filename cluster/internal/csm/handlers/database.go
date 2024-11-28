@@ -48,6 +48,14 @@ func (d DatabaseHandler) Request(msg *database.RequestMsg) {
 		return
 	}
 
+	// insert lock record
+	if err := d.storage.InsertLock(trx.GetSender()); err != nil {
+		d.logger.Warn("failed to stores locks", zap.Int("session id", sessionId))
+	}
+	if err := d.storage.InsertLock(trx.GetReceiver()); err != nil {
+		d.logger.Warn("failed to stores locks", zap.Int("session id", sessionId))
+	}
+
 	// get the sender balance
 	balance, err := d.storage.GetClientBalance(trx.GetSender())
 	if err != nil {
@@ -162,6 +170,11 @@ func (d DatabaseHandler) Prepare(msg *database.PrepareMsg) {
 		d.manager.Unlock(msg.GetClient(), sessionId)
 
 		return
+	}
+
+	// insert lock record
+	if err := d.storage.InsertLock(msg.GetClient()); err != nil {
+		d.logger.Warn("failed to stores locks", zap.Int("session id", sessionId))
 	}
 
 	// create a list of WALs

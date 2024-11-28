@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"time"
 
 	"github.com/F24-CSE535/2pc/cluster/pkg/enums"
 	"github.com/F24-CSE535/2pc/cluster/pkg/models"
@@ -213,4 +214,14 @@ func (d *Database) GetLogsWithCommittedWALs(from int) ([]*models.Log, error) {
 	}
 
 	return results, nil
+}
+
+// InsertLock gets a record and inserts a lock record.
+func (d *Database) InsertLock(record string) error {
+	_, err := d.locksCollection.InsertOne(context.TODO(), &models.Lock{
+		Record:    record,
+		DeletedAt: time.Now().String(),
+	})
+
+	return err
 }
