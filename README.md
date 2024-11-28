@@ -134,7 +134,7 @@ Each node has a `gRPC` interface that accepts `RPC` calls from both client and o
 
 ### 2PL
 
-Each server has a local lock for input transactions. If a lock is being set, then the input transaction will be aborted. Otherwise, the server accepts the input transaction. The lock table is a key-value map that tells wheter a record is being used by the processor or not.
+Each server has a local lock for input transactions. If a lock is being set, then the input transaction will be aborted. Otherwise, the server accepts the input transaction. The lock table is a key-value map that tells wheter a record is being used by the processor or not. The logs will also be stored in MongoDB cluster to be persistant.
 
 ### WAL
 
