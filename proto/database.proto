@@ -1,0 +1,104 @@
+syntax = "proto3";
+package database;
+
+import "google/protobuf/empty.proto";
+
+option go_package = "./rpc/database";
+
+// creating rpc services for database management system.
+service Database {
+  rpc Request(RequestMsg) returns (google.protobuf.Empty) {}
+  rpc Reply(ReplyMsg) returns (google.protobuf.Empty) {}
+  rpc Prepare(PrepareMsg) returns (google.protobuf.Empty) {}
+  rpc Ack(AckMsg) returns (google.protobuf.Empty) {}
+  rpc Commit(CommitMsg) returns (google.protobuf.Empty) {}
+  rpc Abort(AbortMsg) returns (google.protobuf.Empty) {}
+  rpc Rebalance(RebalanceMsg) returns (RebalanceRsp) {}
+  rpc PrintBalance(PrintBalanceMsg) returns (PrintBalanceRsp) {}
+  rpc PrintLogs(google.protobuf.Empty) returns (stream LogRsp) {}
+  rpc PrintDatastore(google.protobuf.Empty) returns (stream DatastoreRsp) {}
+  rpc Block(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  rpc Unblock(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+}
+
+// transaction contains our units of work.
+message TransactionMsg {
+  string sender = 1;
+  string receiver = 2;
+  int64 amount = 3;
+  int64 session_id = 4;
+}
+
+// request is used for inter-shard transactions.
+message RequestMsg {
+  TransactionMsg transaction = 1;
+  string return_address = 2;
+}
+
+// reply is used for returning a response to the client.
+message ReplyMsg {
+  int64 session_id = 1;
+  string text = 2;
+}
+
+// prepare is used in the first phase of 2pc.
+message PrepareMsg {
+  TransactionMsg transaction = 1;
+  string client = 2;
+  string return_address = 3;
+}
+
+// ack is returned by nodes for 2pc.
+message AckMsg {
+  int64 session_id = 1;
+  bool is_aborted = 2;
+  string node_id = 3;
+}
+
+// commit is used in the second phase of 2pc if no node aborts prepare.
+message CommitMsg {
+  int64 session_id = 1;
+  string return_address = 2;
+}
+
+// abort is used in the second phase of 2pc if at least one node aborts prepare.
+message AbortMsg {
+  int64 session_id = 1;
+}
+
+// rebalance is used in the rebalancing phase.
+message RebalanceMsg {
+  string record = 1;
+  int64 balance = 2;
+  bool add = 3;
+}
+
+// rebalance response is used in rebalancing phase.
+message RebalanceRsp {
+  string record = 1;
+  int64 balance = 2;
+}
+
+// client helper functions.
+message PrintBalanceMsg {
+  string client = 1;
+}
+
+message PrintBalanceRsp {
+  string client = 1;
+  int64 balance = 2;
+}
+
+message LogRsp {
+  string record = 1;
+  string message = 2;
+  int64 session_id = 3;
+  int64 new_value = 4;
+}
+
+message DatastoreRsp {
+  string ballot_number_pid = 1;
+  int64 ballot_number_sequence = 2;
+  string record = 3;
+  int64 session_id = 4;
+}

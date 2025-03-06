@@ -1,0 +1,20 @@
+# export files
+vendor/
+main
+main~
+logs.csv
+logs*.csv
+new-schema.txt
+
+# app directoires
+tests/
+configs/
+
+# config files
+config.yaml
+config.yml
+
+# workspace
+.vscode/
+.DS_Store
+.idea/

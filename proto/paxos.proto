@@ -1,0 +1,76 @@
+syntax = "proto3";
+package paxos;
+
+import "google/protobuf/empty.proto";
+
+option go_package = "./rpc/paxos";
+
+// creating rpc services for paxos consensus protocol.
+service Paxos {
+  rpc Ping(PingMsg) returns (google.protobuf.Empty) {}
+  rpc Pong(PongMsg) returns (google.protobuf.Empty) {}
+  rpc Sync(SyncMsg) returns (google.protobuf.Empty) {}
+  rpc Accept(AcceptMsg) returns (google.protobuf.Empty) {}
+  rpc Accepted(AcceptedMsg) returns (google.protobuf.Empty) {}
+  rpc Commit(CommitMsg) returns (google.protobuf.Empty) {}
+}
+
+// ballot-number is used for ordering the input transactions.
+message BallotNumber {
+  int64 sequence = 1;
+  string node_id = 2;
+}
+
+// ping message is sent by the leader to all other nodes.
+message PingMsg {
+  BallotNumber last_committed = 1;
+  string node_id = 2;
+}
+
+// pong message is sent by the followers to 
+// the leader when it wants to be synced.
+message PongMsg {
+  BallotNumber last_committed = 1;
+  string node_id = 2;
+}
+
+// sync message and sync item is sent from the sender to receiver
+message SyncItem {
+  string record = 1;
+  int64 value = 2;
+}
+
+message SyncMsg {
+  BallotNumber last_committed = 1;
+  repeated SyncItem items = 2;
+}
+
+// Request is used by the clients to forward a client's request to other nodes.
+message Request {
+  string sender = 1;
+  string receiver = 2;
+  int64 amount = 3;
+  int64 session_id = 4;
+  string client = 5;
+  string return_address = 6;
+}
+
+// accept message is sent by the leader to the followers on new request.
+message AcceptMsg {
+  BallotNumber ballot_number = 1;
+  Request request = 2;
+  string node_id = 3;
+  bool cross_shard = 4;
+}
+
+// accepted message is sent by the followers to the leader on new accept.
+message AcceptedMsg {
+  BallotNumber accepted_number = 1;
+  AcceptMsg accepted_value = 2;
+}
+
+// commit message is sent by the leader to followers to commit a procedure.
+message CommitMsg {
+  BallotNumber accepted_number = 1;
+  AcceptMsg accepted_value = 2;
+}
